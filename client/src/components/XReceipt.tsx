@@ -10,11 +10,11 @@ import {
   ReceiptLine,
   ReceiptFooter,
 } from "./ReceiptLayout";
-import { fetchXUser } from "../lib/x";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
 import { Icons } from "./ui/icons";
+import { Link as LinkIcon } from "lucide-react";
 
 type XReceiptProps = {
   username: string;
@@ -236,7 +236,7 @@ export function XReceipt({ username }: XReceiptProps) {
                   rel="noopener noreferrer"
                   className="text-xs text-blue-500 hover:underline flex items-center gap-1"
                 >
-                  <Icons.LinkIcon className="w-3 h-3" />
+                  <LinkIcon className="w-3 h-3" />
                   View on X
                 </a>
               </div>
