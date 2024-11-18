@@ -5,6 +5,7 @@ import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const BYPASS_CACHE = process.env.NODE_ENV === 'development';
 
 export function registerRoutes(app: Express) {
   app.get("/api/x/users/:username", async (req, res) => {
@@ -16,20 +17,22 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      // Check cache first
-      const cachedData = await db
-        .select()
-        .from(xUserCache)
-        .where(eq(xUserCache.username, req.params.username));
+      // Check cache first (unless bypassed)
+      if (!BYPASS_CACHE && !req.query.nocache) {
+        const cachedData = await db
+          .select()
+          .from(xUserCache)
+          .where(eq(xUserCache.username, req.params.username));
 
-      const now = Date.now();
-      if (cachedData.length > 0) {
-        const cache = cachedData[0];
-        const cacheAge = now - cache.cached_at.getTime();
+        const now = Date.now();
+        if (cachedData.length > 0) {
+          const cache = cachedData[0];
+          const cacheAge = now - cache.cached_at.getTime();
 
-        // Return cached data if valid
-        if (cacheAge < CACHE_DURATION_MS) {
-          return res.json(cache.data);
+          // Return cached data if valid
+          if (cacheAge < CACHE_DURATION_MS) {
+            return res.json(cache.data);
+          }
         }
       }
 
@@ -119,24 +122,25 @@ export function registerRoutes(app: Express) {
             }
           : undefined,
         trends: trends || [],
-        trends_cached_at: new Date().toISOString(),
       };
 
-      // Store in cache
-      await db
-        .insert(xUserCache)
-        .values({
-          username: req.params.username,
-          data: combinedData,
-          cached_at: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: xUserCache.username,
-          set: {
+      // Store in cache (unless bypassed)
+      if (!BYPASS_CACHE) {
+        await db
+          .insert(xUserCache)
+          .values({
+            username: req.params.username,
             data: combinedData,
             cached_at: new Date(),
-          },
-        });
+          })
+          .onConflictDoUpdate({
+            target: xUserCache.username,
+            set: {
+              data: combinedData,
+              cached_at: new Date(),
+            },
+          });
+      }
 
       res.set("Cache-Control", "public, max-age=300");
       res.json(combinedData);
