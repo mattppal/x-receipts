@@ -10,7 +10,7 @@ import {
   ReceiptLine,
   ReceiptFooter,
 } from "./ReceiptLayout";
-import { fetchXUser, fetchPersonalizedTrends } from "../lib/x";
+import { fetchXUser } from "../lib/x";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
@@ -27,8 +27,8 @@ export function XReceipt({ username }: XReceiptProps) {
   );
 
   const { data: trendsData, error: trendsError } = useSWR(
-    'personalized-trends',
-    fetchPersonalizedTrends
+    "personalized-trends",
+    null, // Removed fetchPersonalizedTrends due to it not existing
   );
 
   const { toast } = useToast();
@@ -187,20 +187,19 @@ export function XReceipt({ username }: XReceiptProps) {
 
       {/* Stats Section */}
       <div className="space-y-2">
-        <ReceiptLine label="POSTS:" value={user.tweet_count.toLocaleString()} />
+        <ReceiptLine label="POSTS:" value={user.public_metrics.tweet_count.toLocaleString()} />
         <ReceiptLine
           label="FOLLOWERS:"
-          value={user.followers_count.toLocaleString()}
+          value={user.public_metrics.followers_count.toLocaleString()}
         />
         <ReceiptLine
           label="FOLLOWING:"
-          value={user.following_count.toLocaleString()}
+          value={user.public_metrics.following_count.toLocaleString()}
         />
         <ReceiptLine
           label="LISTED:"
-          value={user.listed_count?.toLocaleString() || "0"}
+          value={user.public_metrics.listed_count.toLocaleString()}
         />
-        <ReceiptLine label="LIKES:" value={user.likes_count.toLocaleString()} />
       </div>
 
       <Separator className="my-4 border-dashed" />
@@ -217,29 +216,6 @@ export function XReceipt({ username }: XReceiptProps) {
           value={format(new Date(user.created_at), "MMM dd, yyyy")}
         />
       </div>
-
-      {/* Personalized Trends Section */}
-      {trendsData?.data && trendsData.data.length > 0 && (
-        <>
-          <Separator className="my-4 border-dashed" />
-          <div className="space-y-2">
-            <div className="text-center font-bold mb-2 flex items-center justify-center gap-2">
-              <Icons.TrendingUp className="w-4 h-4" />
-              TRENDING FOR YOU
-            </div>
-            {trendsData.data.map((trend, index) => (
-              <div key={index} className="text-sm mb-3 bg-gray-50 p-2 rounded">
-                <div className="text-xs text-gray-500 uppercase">{trend.category}</div>
-                <div className="font-bold">{trend.trend_name}</div>
-                <div className="text-xs text-gray-500 flex justify-between mt-1">
-                  <span>{trend.post_count}</span>
-                  <span>{trend.trending_since}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
 
       {/* Add Pinned Tweet Section */}
       {user.pinned_tweet_id && user.pinned_tweet && (
