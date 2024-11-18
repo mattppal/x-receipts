@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+const pinnedTweetSchema = z.object({
+  text: z.string(),
+  created_at: z.string(),
+  retweet_count: z.number(),
+  reply_count: z.number(),
+  like_count: z.number(),
+  media: z.array(z.object({ key: z.string() })).optional()
+});
+
 export const xUserSchema = z.object({
   username: z.string(),
   name: z.string(),
@@ -16,7 +25,8 @@ export const xUserSchema = z.object({
   protected: z.boolean().optional(),
   url: z.string().optional(),
   entities: z.object({}).optional(),
-  pinned_tweet_id: z.string().optional()
+  pinned_tweet_id: z.string().optional(),
+  pinned_tweet: pinnedTweetSchema.optional()
 });
 
 export type XUser = z.infer<typeof xUserSchema>;

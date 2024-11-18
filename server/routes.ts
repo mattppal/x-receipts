@@ -62,6 +62,19 @@ export function registerRoutes(app: Express) {
         });
       }
 
+      // Fetch pinned tweet if it exists
+      let pinnedTweet;
+      if (user.data.pinned_tweet_id) {
+        try {
+          const tweet = await client.v2.singleTweet(user.data.pinned_tweet_id, {
+            'tweet.fields': ['created_at', 'public_metrics', 'attachments']
+          });
+          pinnedTweet = tweet.data;
+        } catch (error) {
+          console.error('Failed to fetch pinned tweet:', error);
+        }
+      }
+
       // Enhanced user data with additional fields
       const userData = {
         username: user.data.username,
@@ -79,7 +92,16 @@ export function registerRoutes(app: Express) {
         protected: user.data.protected ?? false,
         url: user.data.url,
         entities: user.data.entities,
-        pinned_tweet_id: user.data.pinned_tweet_id
+        pinned_tweet_id: user.data.pinned_tweet_id,
+        pinned_tweet: pinnedTweet ? {
+          text: pinnedTweet.text,
+          created_at: pinnedTweet.created_at,
+          retweet_count: pinnedTweet.public_metrics?.retweet_count ?? 0,
+          reply_count: pinnedTweet.public_metrics?.reply_count ?? 0,
+          like_count: pinnedTweet.public_metrics?.like_count ?? 0,
+          media: pinnedTweet.attachments?.media_keys ? 
+            pinnedTweet.attachments.media_keys.map(key => ({ key })) : []
+        } : undefined
       };
 
       // Store in cache
