@@ -42,16 +42,20 @@ export function registerRoutes(app: Express) {
       // Fetch user data
       const user = await client.v2.userByUsername(req.params.username, {
         "user.fields": [
-          "public_metrics",
+          "id",
+          "name",
+          "username",
           "created_at",
-          "profile_image_url",
           "description",
-          "location",
-          "verified",
-          "protected",
-          "url",
           "entities",
+          "location",
           "pinned_tweet_id",
+          "profile_image_url",
+          "protected",
+          "public_metrics",
+          "url",
+          "verified",
+          "withheld"
         ],
       });
 
@@ -67,7 +71,7 @@ export function registerRoutes(app: Express) {
       if (user.data.pinned_tweet_id) {
         try {
           const tweet = await client.v2.singleTweet(user.data.pinned_tweet_id, {
-            "tweet.fields": ["created_at", "public_metrics", "attachments"],
+            "tweet.fields": ["created_at", "public_metrics", "attachments", "entities"],
           });
           pinnedTweet = tweet.data;
         } catch (error) {
@@ -75,53 +79,32 @@ export function registerRoutes(app: Express) {
         }
       }
 
-      // Fetch personalized trends
-      let trends;
-      try {
-        const trendsResponse = await client.v2.get("users/personalized_trends");
-        trends = trendsResponse.data.map((trend: any) => ({
-          category: trend.category || "General",
-          post_count: trend.tweet_volume
-            ? `${formatTweetCount(trend.tweet_volume)} posts`
-            : "N/A posts",
-          trend_name: trend.name,
-          trending_since: trend.trending_since || "Trending now",
-        }));
-      } catch (error) {
-        console.error("Failed to fetch trends:", error);
-      }
-
-      // Combine all data into a single object
-      const combinedData = {
-        username: user.data.username,
+      // Format the response according to the new schema
+      const formattedData = {
+        id: user.data.id,
         name: user.data.name,
-        followers_count: user.data.public_metrics?.followers_count ?? 0,
-        following_count: user.data.public_metrics?.following_count ?? 0,
-        tweet_count: user.data.public_metrics?.tweet_count ?? 0,
-        listed_count: user.data.public_metrics?.listed_count ?? 0,
-        likes_count: user.data.public_metrics?.like_count ?? 0,
+        username: user.data.username,
         created_at: user.data.created_at,
-        profile_image_url: user.data.profile_image_url?.replace("_normal", ""),
         description: user.data.description,
-        location: user.data.location,
-        verified: user.data.verified ?? false,
-        protected: user.data.protected ?? false,
-        url: user.data.url,
         entities: user.data.entities,
+        location: user.data.location,
         pinned_tweet_id: user.data.pinned_tweet_id,
-        pinned_tweet: pinnedTweet
-          ? {
-              text: pinnedTweet.text,
-              created_at: pinnedTweet.created_at,
-              retweet_count: pinnedTweet.public_metrics?.retweet_count ?? 0,
-              reply_count: pinnedTweet.public_metrics?.reply_count ?? 0,
-              like_count: pinnedTweet.public_metrics?.like_count ?? 0,
-              media: pinnedTweet.attachments?.media_keys
-                ? pinnedTweet.attachments.media_keys.map((key) => ({ key }))
-                : [],
-            }
-          : undefined,
-        trends: trends || [],
+        profile_image_url: user.data.profile_image_url?.replace("_normal", ""),
+        protected: user.data.protected,
+        public_metrics: user.data.public_metrics,
+        url: user.data.url,
+        verified: user.data.verified,
+        withheld: user.data.withheld,
+        pinned_tweet: pinnedTweet ? {
+          text: pinnedTweet.text,
+          created_at: pinnedTweet.created_at,
+          retweet_count: pinnedTweet.public_metrics?.retweet_count ?? 0,
+          reply_count: pinnedTweet.public_metrics?.reply_count ?? 0,
+          like_count: pinnedTweet.public_metrics?.like_count ?? 0,
+          media: pinnedTweet.attachments?.media_keys
+            ? pinnedTweet.attachments.media_keys.map((key) => ({ key }))
+            : [],
+        } : undefined,
       };
 
       // Store in cache (unless bypassed)
@@ -130,27 +113,24 @@ export function registerRoutes(app: Express) {
           .insert(xUserCache)
           .values({
             username: req.params.username,
-            data: combinedData,
+            data: formattedData,
             cached_at: new Date(),
           })
           .onConflictDoUpdate({
             target: xUserCache.username,
             set: {
-              data: combinedData,
+              data: formattedData,
               cached_at: new Date(),
             },
           });
       }
 
       res.set("Cache-Control", "public, max-age=300");
-      res.json(combinedData);
+      res.json(formattedData);
     } catch (error: any) {
       console.error("X API error:", error);
 
-      if (
-        error.code === 429 ||
-        (error.errors && error.errors[0]?.code === 88)
-      ) {
+      if (error.code === 429 || (error.errors && error.errors[0]?.code === 88)) {
         const resetTime = error.rateLimit?.reset
           ? new Date(error.rateLimit.reset * 1000).toISOString()
           : undefined;
@@ -192,7 +172,6 @@ export function registerRoutes(app: Express) {
   });
 }
 
-// Helper function to format tweet counts
 function formatTweetCount(count: number): string {
   if (count >= 1000000) {
     return `${(count / 1000000).toFixed(1)}M`;

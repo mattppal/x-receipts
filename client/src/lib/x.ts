@@ -1,5 +1,40 @@
 import { z } from 'zod';
 
+const urlEntitySchema = z.object({
+  urls: z.array(z.object({
+    start: z.number(),
+    end: z.number(),
+    url: z.string(),
+    expanded_url: z.string(),
+    display_url: z.string()
+  }))
+});
+
+const descriptionEntitySchema = z.object({
+  urls: z.array(z.object({
+    start: z.number(),
+    end: z.number(),
+    url: z.string(),
+    expanded_url: z.string(),
+    display_url: z.string()
+  })).optional(),
+  hashtags: z.array(z.object({
+    start: z.number(),
+    end: z.number(),
+    tag: z.string()
+  })).optional(),
+  mentions: z.array(z.object({
+    start: z.number(),
+    end: z.number(),
+    tag: z.string()
+  })).optional(),
+  cashtags: z.array(z.object({
+    start: z.number(),
+    end: z.number(),
+    tag: z.string()
+  })).optional()
+});
+
 const pinnedTweetSchema = z.object({
   text: z.string(),
   created_at: z.string(),
@@ -10,23 +45,30 @@ const pinnedTweetSchema = z.object({
 });
 
 export const xUserSchema = z.object({
-  username: z.string(),
+  id: z.string(),
   name: z.string(),
-  followers_count: z.number(),
-  following_count: z.number(),
-  tweet_count: z.number(),
+  username: z.string(),
+  connection_status: z.array(z.string()).optional(),
   created_at: z.string(),
-  profile_image_url: z.string().optional(),
   description: z.string().optional(),
+  entities: z.object({
+    url: urlEntitySchema.optional(),
+    description: descriptionEntitySchema.optional()
+  }).optional(),
   location: z.string().optional(),
-  listed_count: z.number(),
-  likes_count: z.number(),
-  verified: z.boolean().optional(),
-  protected: z.boolean().optional(),
-  url: z.string().optional(),
-  entities: z.object({}).optional(),
   pinned_tweet_id: z.string().optional(),
-  pinned_tweet: pinnedTweetSchema.optional()
+  pinned_tweet: pinnedTweetSchema.optional(),
+  profile_image_url: z.string().optional(),
+  protected: z.boolean(),
+  public_metrics: z.object({
+    followers_count: z.number(),
+    following_count: z.number(),
+    tweet_count: z.number(),
+    listed_count: z.number()
+  }),
+  url: z.string().optional(),
+  verified: z.boolean(),
+  withheld: z.object({}).optional()
 });
 
 export type XUser = z.infer<typeof xUserSchema>;
@@ -79,25 +121,4 @@ export async function fetchXUser(username: string, retryCount = 3): Promise<XUse
     }
     throw error;
   }
-}
-
-export const trendSchema = z.object({
-  category: z.string(),
-  post_count: z.string(),
-  trend_name: z.string(),
-  trending_since: z.string()
-});
-
-export type Trend = z.infer<typeof trendSchema>;
-
-export async function fetchPersonalizedTrends(): Promise<{ data: Trend[] }> {
-  const response = await fetch('/api/x/trends/personalized');
-  
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data.details || 'Failed to fetch personalized trends');
-  }
-  
-  const data = await response.json();
-  return z.object({ data: z.array(trendSchema) }).parse(data);
 }
