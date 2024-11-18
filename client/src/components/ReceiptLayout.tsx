@@ -26,31 +26,47 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
 }
 
 function TornEdge() {
+  // Generate random tear positions for more natural look
+  const generateTearPoints = () => {
+    const points = [];
+    const numPoints = 24; // Increased number of points for more detail
+    const baseHeight = 8;
+    
+    for (let i = 0; i < numPoints; i++) {
+      const randomHeight = baseHeight + Math.random() * 4;
+      points.push(randomHeight);
+    }
+    return points;
+  };
+
+  const tearPoints = generateTearPoints();
+  const gradients = tearPoints.map((height, i) => {
+    const position = (i * (100 / (tearPoints.length - 1))).toFixed(1);
+    return `radial-gradient(circle at ${position}% -5px, transparent ${height-2}px, white ${height}px)`;
+  }).join(',');
+
   return (
-    <div className="w-full h-6 relative overflow-hidden">
+    <div className="w-full h-8 relative overflow-hidden">
       <div 
-        className="absolute inset-x-0 h-12" 
+        className="absolute inset-x-0 h-16" 
         style={{
           backgroundImage: `
-            radial-gradient(circle at 0 -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 15px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 30px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 45px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 60px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 75px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 90px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 105px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 120px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 135px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 150px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 165px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 180px -5px, transparent 6px, white 7px),
-            radial-gradient(circle at 195px -5px, transparent 6px, white 7px)
+            ${gradients},
+            repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 3px)
           `,
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: '210px 12px',
+          backgroundRepeat: 'no-repeat, repeat-x',
+          backgroundSize: '100% 16px, 6px 16px',
           backgroundPosition: 'center top',
-          filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.15))'
+          filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.15))',
+          maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
+        }}
+      />
+      <div 
+        className="absolute inset-x-0 h-16 opacity-10" 
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.3'/%3E%3C/svg%3E")`,
+          backgroundSize: '100px 100px',
+          maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
         }}
       />
     </div>
