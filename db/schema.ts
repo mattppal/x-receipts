@@ -12,8 +12,6 @@ export const xUserCache = pgTable("x_user_cache", {
   username: text("username").primaryKey(),
   data: jsonb("data").notNull(),
   cached_at: timestamp("cached_at").notNull().defaultNow(),
-  trends_data: jsonb("trends_data"),
-  trends_cached_at: timestamp("trends_cached_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users);
