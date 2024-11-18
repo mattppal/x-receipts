@@ -87,20 +87,6 @@ export function registerRoutes(app: Express) {
         }
       }
 
-      // Safely process entities
-      const processedEntities = {
-        url: user.data.entities?.url,
-        description: {
-          ...user.data.entities?.description,
-          mentions: user.data.entities?.description?.mentions?.map(mention => ({
-            ...mention,
-            username: mention.username || '',
-            start: mention.start || 0,
-            end: mention.end || 0
-          })) || []
-        }
-      };
-
       // Format the response according to the schema
       const formattedData = {
         id: user.data.id,
@@ -108,7 +94,7 @@ export function registerRoutes(app: Express) {
         username: user.data.username,
         created_at: user.data.created_at,
         description: user.data.description,
-        entities: processedEntities,
+        entities: user.data.entities,
         location: user.data.location,
         pinned_tweet_id: user.data.pinned_tweet_id,
         profile_image_url: user.data.profile_image_url?.replace("_normal", ""),
