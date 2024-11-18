@@ -10,6 +10,10 @@ export const twitterUserSchema = z.object({
   created_at: z.string(),
   profile_image_url: z.string().optional(),
   description: z.string().optional(),
+  location: z.string().optional(),
+  listed_count: z.number(),
+  likes_count: z.number(),
+  verified: z.boolean().optional(),
 });
 
 export type TwitterUser = z.infer<typeof twitterUserSchema>;
@@ -22,7 +26,6 @@ export async function fetchTwitterUser(username: string, retryCount = 3): Promis
     const data = await response.json();
     
     if (!response.ok) {
-      // Handle rate limit with specific error
       if (response.status === 429) {
         const retryAfter = response.headers.get('retry-after') || '60';
         const resetTime = data.resetTime ? new Date(data.resetTime) : undefined;
@@ -44,7 +47,6 @@ export async function fetchTwitterUser(username: string, retryCount = 3): Promis
     return twitterUserSchema.parse(data);
   } catch (error: any) {
     if (error.status === 429 && retryCount > 0) {
-      // Wait for the specified time before retrying
       const retryAfter = error.retryAfter || 60;
       await delay(retryAfter * 1000);
       return fetchTwitterUser(username, retryCount - 1);

@@ -13,7 +13,7 @@ export function registerRoutes(app: Express) {
     try {
       const client = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
       const user = await client.v2.userByUsername(req.params.username, {
-        'user.fields': ['public_metrics', 'created_at', 'profile_image_url', 'description']
+        'user.fields': ['public_metrics', 'created_at', 'profile_image_url', 'description', 'location', 'verified']
       });
       
       if (!user.data) {
@@ -29,16 +29,19 @@ export function registerRoutes(app: Express) {
         followers_count: user.data.public_metrics?.followers_count ?? 0,
         following_count: user.data.public_metrics?.following_count ?? 0,
         tweet_count: user.data.public_metrics?.tweet_count ?? 0,
+        listed_count: user.data.public_metrics?.listed_count ?? 0,
+        likes_count: user.data.public_metrics?.like_count ?? 0,
         created_at: user.data.created_at,
         profile_image_url: user.data.profile_image_url,
         description: user.data.description,
+        location: user.data.location,
+        verified: user.data.verified ?? false,
       };
 
       res.json(userData);
     } catch (error: any) {
       console.error('Twitter API error:', error);
       
-      // Handle rate limit specifically
       if (error.code === 429 || (error.errors && error.errors[0]?.code === 88)) {
         const resetTime = error.rateLimit?.reset 
           ? new Date(error.rateLimit.reset * 1000).toISOString()
