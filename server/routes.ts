@@ -87,7 +87,7 @@ export function registerRoutes(app: Express) {
         }
       }
 
-      // Safely process entities with proper type handling
+      // Safely process entities
       const processedEntities = {
         url: user.data.entities?.url,
         description: {
@@ -95,7 +95,6 @@ export function registerRoutes(app: Express) {
           mentions: user.data.entities?.description?.mentions?.map(mention => ({
             ...mention,
             username: mention.username || '',
-            tag: mention.username || '', // Add tag field based on username
             start: mention.start || 0,
             end: mention.end || 0
           })) || []
