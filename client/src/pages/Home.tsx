@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SearchForm } from '../components/SearchForm';
-import { TwitterReceipt } from '../components/TwitterReceipt';
+import { XReceipt } from '../components/XReceipt';
 import { Card } from '../components/ui/card';
 
 export default function Home() {
@@ -22,7 +22,7 @@ export default function Home() {
 
         {username && (
           <div className="mt-8">
-            <TwitterReceipt username={username} />
+            <XReceipt username={username} />
           </div>
         )}
       </div>

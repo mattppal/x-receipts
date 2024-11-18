@@ -31,7 +31,7 @@ export function GithubReceipt({ username }: GithubReceiptProps) {
     <>
       <ReceiptLayout username={username}>
         <ReceiptHeader 
-          title="X RECEIPT"
+          title="DEVELOPER RECEIPT"
           date={format(new Date(), 'EEEE, MMMM dd, yyyy').toUpperCase()}
           orderNumber={orderNumber}
         />

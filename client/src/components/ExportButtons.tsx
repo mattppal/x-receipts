@@ -22,7 +22,7 @@ export function ExportButtons({ username }: ExportButtonsProps) {
         });
         
         const link = document.createElement('a');
-        link.download = `github-receipt-${username}.png`;
+        link.download = `x-receipt-${username}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
       } catch (err) {
@@ -38,8 +38,8 @@ export function ExportButtons({ username }: ExportButtonsProps) {
   const handleShare = useCallback(() => {
     if (navigator.share) {
       navigator.share({
-        title: 'GitHub Receipt',
-        text: `Check out ${username}'s GitHub receipt!`,
+        title: 'X Receipt',
+        text: `Check out ${username}'s X receipt!`,
         url: window.location.href,
       }).catch(() => {
         toast({

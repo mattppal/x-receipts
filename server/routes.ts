@@ -2,8 +2,8 @@ import type { Express } from "express";
 import { TwitterApi } from 'twitter-api-v2';
 
 export function registerRoutes(app: Express) {
-  app.get('/api/twitter/users/:username', async (req, res) => {
-    if (!process.env.TWITTER_BEARER_TOKEN) {
+  app.get('/api/x/users/:username', async (req, res) => {
+    if (!process.env.X_BEARER_TOKEN) {
       return res.status(500).json({ 
         error: 'X API token not configured',
         details: 'Missing X_BEARER_TOKEN environment variable'
@@ -11,7 +11,7 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      const client = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
+      const client = new TwitterApi(process.env.X_BEARER_TOKEN);
       const user = await client.v2.userByUsername(req.params.username, {
         'user.fields': ['public_metrics', 'created_at', 'profile_image_url', 'description', 'location', 'verified']
       });
