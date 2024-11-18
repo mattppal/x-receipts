@@ -1,10 +1,8 @@
 import { useCallback } from 'react';
 import useSWR from 'swr';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
-import { useToast } from '../hooks/use-toast';
 import { ReceiptLayout, ReceiptHeader, ReceiptLine, ReceiptFooter } from './ReceiptLayout';
+import { ExportButtons } from './ExportButtons';
 import { fetchGithubUser } from '../lib/github';
 
 type GithubReceiptProps = {
@@ -16,78 +14,6 @@ export function GithubReceipt({ username }: GithubReceiptProps) {
     username ? `/github/users/${username}` : null,
     () => fetchGithubUser(username)
   );
-  
-  const { toast } = useToast();
-
-  const handleDownload = useCallback(async () => {
-    const receipt = document.getElementById('receipt');
-    if (receipt) {
-      try {
-        const canvas = await html2canvas(receipt);
-        const link = document.createElement('a');
-        link.download = `github-receipt-${username}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-      } catch (err) {
-        toast({
-          title: "Error",
-          description: "Failed to download receipt",
-          variant: "destructive",
-        });
-      }
-    }
-  }, [username, toast]);
-
-  const handleDownloadPDF = useCallback(async () => {
-    const receipt = document.getElementById('receipt');
-    if (receipt) {
-      try {
-        const canvas = await html2canvas(receipt);
-        const imgData = canvas.toDataURL('image/png');
-        
-        // Initialize PDF
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'px',
-          format: [canvas.width, canvas.height]
-        });
-        
-        // Add image to PDF
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        
-        // Save PDF
-        pdf.save(`github-receipt-${username}.pdf`);
-      } catch (err) {
-        toast({
-          title: "Error",
-          description: "Failed to download PDF",
-          variant: "destructive",
-        });
-      }
-    }
-  }, [username, toast]);
-
-  const handleShare = useCallback(() => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'GitHub Receipt',
-        text: `Check out ${username}'s GitHub receipt!`,
-        url: window.location.href,
-      }).catch(() => {
-        toast({
-          title: "Error",
-          description: "Failed to share receipt",
-          variant: "destructive",
-        });
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Success",
-        description: "Link copied to clipboard",
-      });
-    }
-  }, [username, toast]);
 
   if (error) {
     return <div className="text-center text-red-500">Failed to load user data</div>;
@@ -97,29 +23,47 @@ export function GithubReceipt({ username }: GithubReceiptProps) {
     return <div className="text-center">Loading...</div>;
   }
 
-  return (
-    <ReceiptLayout 
-      onDownload={handleDownload}
-      onDownloadPDF={handleDownloadPDF}
-      onShare={handleShare}
-    >
-      <ReceiptHeader 
-        title="GITHUB RECEIPT"
-        date={format(new Date(), 'EEEE, MMMM dd, yyyy')}
-      />
-      
-      <div className="space-y-2">
-        <ReceiptLine label="CUSTOMER:" value={user.login} />
-        <ReceiptLine label="REPOSITORIES:" value={user.public_repos} />
-        <ReceiptLine label="FOLLOWERS:" value={user.followers} />
-        <ReceiptLine label="FOLLOWING:" value={user.following} />
-        <ReceiptLine 
-          label="MEMBER SINCE:" 
-          value={format(new Date(user.created_at), 'MMM dd, yyyy')} 
-        />
-      </div>
+  const orderNumber = Math.floor(Math.random() * 9000 + 1000).toString();
+  const authCode = Math.floor(Math.random() * 900000 + 100000).toString();
+  const cardNumber = '**** **** ****' + Math.floor(Math.random() * 9000 + 1000).toString();
 
-      <ReceiptFooter text="THANK YOU FOR CODING!" />
-    </ReceiptLayout>
+  return (
+    <>
+      <ReceiptLayout username={username}>
+        <ReceiptHeader 
+          title="GITHUB RECEIPT"
+          date={format(new Date(), 'EEEE, MMMM dd, yyyy').toUpperCase()}
+          orderNumber={orderNumber}
+        />
+        
+        <div className="space-y-2">
+          <ReceiptLine label="CUSTOMER:" value={user.name || user.login} />
+          <ReceiptLine label="@" value={user.login} />
+          <ReceiptLine label="REPOSITORIES:" value={user.public_repos} />
+          <ReceiptLine label="STARS EARNED:" value={user.stars || 0} />
+          <ReceiptLine label="REPO FORKS:" value={user.forks || 0} />
+          <ReceiptLine label="FOLLOWERS:" value={user.followers} />
+          <ReceiptLine label="FOLLOWING:" value={user.following} />
+          
+          <div className="my-4" />
+          
+          <ReceiptLine label="TOP LANGUAGES:" value={user.languages || 'NONE'} />
+          <ReceiptLine label="MOST ACTIVE DAY:" value="Friday" />
+          <ReceiptLine label="TOTAL SIZE:" value="478MB" />
+          <ReceiptLine label="CONTRIBUTION SCORE:" value={user.contributions || 0} />
+        </div>
+
+        <ReceiptFooter 
+          text="THANK YOU FOR CODING!"
+          cardInfo={{
+            cardNumber,
+            authCode,
+            cardHolder: user.login.toUpperCase()
+          }}
+        />
+      </ReceiptLayout>
+      
+      <ExportButtons username={username} />
+    </>
   );
 }
