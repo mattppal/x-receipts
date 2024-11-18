@@ -1,14 +1,19 @@
-import { useCallback } from 'react';
-import useSWR from 'swr';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
-import { format } from 'date-fns';
-import { useToast } from '../hooks/use-toast';
-import { ReceiptLayout, ReceiptHeader, ReceiptLine, ReceiptFooter } from './ReceiptLayout';
-import { fetchXUser } from '../lib/x';
-import { Alert, AlertTitle, AlertDescription } from './ui/alert';
-import { Separator } from './ui/separator';
-import { QRCodeSVG } from 'qrcode.react';
+import { useCallback } from "react";
+import useSWR from "swr";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
+import { format } from "date-fns";
+import { useToast } from "../hooks/use-toast";
+import {
+  ReceiptLayout,
+  ReceiptHeader,
+  ReceiptLine,
+  ReceiptFooter,
+} from "./ReceiptLayout";
+import { fetchXUser } from "../lib/x";
+import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
+import { Separator } from "./ui/separator";
+import { QRCodeSVG } from "qrcode.react";
 
 type XReceiptProps = {
   username: string;
@@ -17,17 +22,17 @@ type XReceiptProps = {
 export function XReceipt({ username }: XReceiptProps) {
   const { data: user, error } = useSWR(
     username ? `/x/users/${username}` : null,
-    () => fetchXUser(username)
+    () => fetchXUser(username),
   );
-  
+
   const { toast } = useToast();
 
   const handleDownload = useCallback(async () => {
-    const receipt = document.getElementById('receipt');
+    const receipt = document.getElementById("receipt");
     if (receipt) {
       try {
         const canvas = await html2canvas(receipt, {
-          backgroundColor: '#ffffff',
+          backgroundColor: "#ffffff",
           scale: 2,
           windowWidth: receipt.scrollWidth,
           windowHeight: receipt.scrollHeight,
@@ -37,12 +42,12 @@ export function XReceipt({ username }: XReceiptProps) {
           height: receipt.offsetHeight,
           useCORS: true,
           logging: false,
-          padding: 20
+          padding: 20,
         });
-        
-        const link = document.createElement('a');
+
+        const link = document.createElement("a");
         link.download = `x-receipt-${username}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL("image/png");
         link.click();
       } catch (err) {
         toast({
@@ -55,11 +60,11 @@ export function XReceipt({ username }: XReceiptProps) {
   }, [username, toast]);
 
   const handleDownloadPDF = useCallback(async () => {
-    const receipt = document.getElementById('receipt');
+    const receipt = document.getElementById("receipt");
     if (receipt) {
       try {
         const canvas = await html2canvas(receipt, {
-          backgroundColor: '#ffffff',
+          backgroundColor: "#ffffff",
           scale: 2,
           windowWidth: receipt.scrollWidth,
           windowHeight: receipt.scrollHeight,
@@ -69,17 +74,17 @@ export function XReceipt({ username }: XReceiptProps) {
           height: receipt.offsetHeight,
           useCORS: true,
           logging: false,
-          padding: 20
+          padding: 20,
         });
-        
-        const imgData = canvas.toDataURL('image/png');
+
+        const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'px',
-          format: [canvas.width + 40, canvas.height + 40]
+          orientation: "portrait",
+          unit: "px",
+          format: [canvas.width + 40, canvas.height + 40],
         });
-        
-        pdf.addImage(imgData, 'PNG', 20, 20, canvas.width, canvas.height);
+
+        pdf.addImage(imgData, "PNG", 20, 20, canvas.width, canvas.height);
         pdf.save(`x-receipt-${username}.pdf`);
       } catch (err) {
         toast({
@@ -93,17 +98,19 @@ export function XReceipt({ username }: XReceiptProps) {
 
   const handleShare = useCallback(() => {
     if (navigator.share) {
-      navigator.share({
-        title: 'X Receipt',
-        text: `Check out ${username}'s X receipt!`,
-        url: window.location.href,
-      }).catch(() => {
-        toast({
-          title: "Error",
-          description: "Failed to share receipt",
-          variant: "destructive",
+      navigator
+        .share({
+          title: "X Receipt",
+          text: `Check out ${username}'s X receipt!`,
+          url: window.location.href,
+        })
+        .catch(() => {
+          toast({
+            title: "Error",
+            description: "Failed to share receipt",
+            variant: "destructive",
+          });
         });
-      });
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast({
@@ -118,7 +125,9 @@ export function XReceipt({ username }: XReceiptProps) {
       <Alert variant="destructive">
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>
-          {error.details || error.message || 'Failed to load user data. Please try again.'}
+          {error.details ||
+            error.message ||
+            "Failed to load user data. Please try again."}
         </AlertDescription>
       </Alert>
     );
@@ -129,23 +138,26 @@ export function XReceipt({ username }: XReceiptProps) {
   }
 
   return (
-    <ReceiptLayout 
-      onDownload={handleDownload} 
+    <ReceiptLayout
+      onDownload={handleDownload}
       onDownloadPDF={handleDownloadPDF}
       onShare={handleShare}
       isVerified={user.verified}
     >
-      <ReceiptHeader 
+      <ReceiptHeader
         title="X RECEIPT"
-        date={format(new Date(), 'EEEE, MMMM dd, yyyy')}
+        date={format(new Date(), "EEEE, MMMM dd, yyyy")}
       />
-      
+
       {/* Profile Section */}
       <div className="space-y-2">
         <ReceiptLine label="CUSTOMER:" value={user.name} />
         <ReceiptLine label="@USERNAME:" value={user.username} />
-        <ReceiptLine label="BIO:" value={user.description || 'No bio'} />
-        <ReceiptLine label="LOCATION:" value={user.location || 'Not specified'} />
+        <ReceiptLine label="BIO:" value={user.description || "No bio"} />
+        <ReceiptLine
+          label="LOCATION:"
+          value={user.location || "Not specified"}
+        />
       </div>
 
       <Separator className="my-4 border-dashed" />
@@ -153,9 +165,18 @@ export function XReceipt({ username }: XReceiptProps) {
       {/* Stats Section */}
       <div className="space-y-2">
         <ReceiptLine label="POSTS:" value={user.tweet_count.toLocaleString()} />
-        <ReceiptLine label="FOLLOWERS:" value={user.followers_count.toLocaleString()} />
-        <ReceiptLine label="FOLLOWING:" value={user.following_count.toLocaleString()} />
-        <ReceiptLine label="LISTED:" value={user.listed_count?.toLocaleString() || '0'} />
+        <ReceiptLine
+          label="FOLLOWERS:"
+          value={user.followers_count.toLocaleString()}
+        />
+        <ReceiptLine
+          label="FOLLOWING:"
+          value={user.following_count.toLocaleString()}
+        />
+        <ReceiptLine
+          label="LISTED:"
+          value={user.listed_count?.toLocaleString() || "0"}
+        />
         <ReceiptLine label="LIKES:" value={user.likes_count.toLocaleString()} />
       </div>
 
@@ -163,10 +184,14 @@ export function XReceipt({ username }: XReceiptProps) {
 
       {/* Account Info Section */}
       <div className="space-y-2">
-        <ReceiptLine label="VERIFIED:" value={user.verified ? 'Yes' : 'No'} verified={user.verified} />
-        <ReceiptLine 
-          label="MEMBER SINCE:" 
-          value={format(new Date(user.created_at), 'MMM dd, yyyy')} 
+        <ReceiptLine
+          label="VERIFIED:"
+          value={user.verified ? "Yes" : "No"}
+          verified={user.verified}
+        />
+        <ReceiptLine
+          label="MEMBER SINCE:"
+          value={format(new Date(user.created_at), "MMM dd, yyyy")}
         />
       </div>
 
