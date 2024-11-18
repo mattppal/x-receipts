@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useRef, useState } from "react";
+import { PropsWithChildren, useEffect, useRef, useState, useMemo } from "react";
 import { Separator } from "./ui/separator";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
 
@@ -28,7 +28,8 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
 function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  const tearSize = 10;
+  const tearSize = 12; // Slightly larger tears
+  const tearVariation = 2; // Amount of random variation
 
   useEffect(() => {
     if (containerRef.current) {
@@ -48,6 +49,13 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
   const offset = ((tiles - rawTiles) * tearSize) / 2;
   const margin = -(tearSize * 1.5) / 2;
 
+  // Generate random offsets for each tear
+  const randomOffsets = useMemo(() => {
+    return Array(tiles).fill(0).map(() => 
+      (Math.random() * tearVariation) - (tearVariation / 2)
+    );
+  }, [tiles]);
+
   return (
     <div
       ref={containerRef}
@@ -62,6 +70,7 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
         zIndex: 0,
       }}
     >
+      {/* Left end cap */}
       <div
         style={{
           width: tearSize,
@@ -69,8 +78,12 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
           backgroundColor: "white",
           marginRight: -offset,
           zIndex: 100,
+          borderRadius: isUnder ? "0 0 2px 2px" : "2px 2px 0 0",
+          boxShadow: isUnder ? "inset 0 1px 3px rgba(0,0,0,0.1)" : "inset 0 -1px 3px rgba(0,0,0,0.1)",
         }}
       />
+      
+      {/* Tear elements */}
       {Array.from({ length: tiles }).map((_, i) => (
         <div
           key={`tear-${i}`}
@@ -78,10 +91,17 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
             width: tearSize,
             height: tearSize,
             backgroundColor: "white",
-            transform: "rotate(45deg)",
+            transform: `rotate(45deg) translateY(${randomOffsets[i]}px)`,
+            position: "relative",
+            zIndex: 1,
+            boxShadow: isUnder 
+              ? "inset -1px -1px 2px rgba(0,0,0,0.05)"
+              : "inset 1px 1px 2px rgba(0,0,0,0.05)",
           }}
         />
       ))}
+      
+      {/* Right end cap */}
       <div
         style={{
           width: tearSize,
@@ -89,15 +109,19 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
           backgroundColor: "white",
           marginLeft: -offset,
           zIndex: 100,
+          borderRadius: isUnder ? "0 0 2px 2px" : "2px 2px 0 0",
+          boxShadow: isUnder ? "inset 0 1px 3px rgba(0,0,0,0.1)" : "inset 0 -1px 3px rgba(0,0,0,0.1)",
         }}
       />
+      
+      {/* Paper texture overlay */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
-          backgroundSize: "50px 50px",
-          opacity: 0.3,
-          pointerEvents: "none",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
+          backgroundSize: "100px 100px",
+          opacity: 0.5,
+          mixBlendMode: "multiply",
         }}
       />
     </div>
