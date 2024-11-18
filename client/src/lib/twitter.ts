@@ -16,9 +16,14 @@ export type TwitterUser = z.infer<typeof twitterUserSchema>;
 
 export async function fetchTwitterUser(username: string): Promise<TwitterUser> {
   const response = await fetch(`/api/twitter/users/${username}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch Twitter user');
-  }
   const data = await response.json();
+  
+  if (!response.ok) {
+    throw {
+      message: data.error || 'Failed to fetch Twitter user',
+      details: data.details || 'Unknown error occurred'
+    };
+  }
+  
   return twitterUserSchema.parse(data);
 }
