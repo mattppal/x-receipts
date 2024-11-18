@@ -1,9 +1,9 @@
 import type { Express } from "express";
 import { TwitterApi } from 'twitter-api-v2';
 import { db } from '../db';
-import { xUserCache, personalizedTrendsCache } from '../db/schema'; // Added personalizedTrendsCache import
+import { xUserCache } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { sql } from 'drizzle-orm'; // Added for SQL queries
+import { sql } from 'drizzle-orm';
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 const TRENDS_CACHE_DURATION_MS = 15 * 60 * 1000; // 15 minutes
@@ -198,16 +198,6 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      // Check cache first
-      const cachedTrends = await db.select()
-        .from(personalizedTrendsCache)
-        .where(sql`expires_at > NOW()`)
-        .limit(1);
-
-      if (cachedTrends.length > 0) {
-        return res.json(cachedTrends[0].data);
-      }
-
       // Fetch fresh data from X API
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
       const trends = await client.v2.get('users/personalized_trends');
@@ -222,15 +212,6 @@ export function registerRoutes(app: Express) {
         }))
       };
 
-      // Store in cache
-      await db.delete(personalizedTrendsCache);
-      await db.insert(personalizedTrendsCache)
-        .values({
-          data: formattedTrends,
-          cached_at: new Date(),
-          expires_at: new Date(Date.now() + TRENDS_CACHE_DURATION_MS)
-        });
-      
       res.json(formattedTrends);
     } catch (error: any) {
       console.error('X API error:', error);
