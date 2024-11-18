@@ -5,7 +5,7 @@ import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-const BYPASS_CACHE = process.env.NODE_ENV === 'development';
+const BYPASS_CACHE = process.env.NODE_ENV === 'development' && process.env.FORCE_BYPASS_CACHE === 'true';
 
 export function registerRoutes(app: Express) {
   app.get("/api/x/users/:username", async (req, res) => {
@@ -16,31 +16,39 @@ export function registerRoutes(app: Express) {
       });
     }
 
+    const username = req.params.username.toLowerCase(); // Normalize username
+
     try {
       // Check cache first (unless bypassed)
       if (!BYPASS_CACHE && !req.query.nocache) {
-        const cachedData = await db
-          .select()
-          .from(xUserCache)
-          .where(eq(xUserCache.username, req.params.username));
+        try {
+          const cachedData = await db
+            .select()
+            .from(xUserCache)
+            .where(eq(xUserCache.username, username))
+            .limit(1);
 
-        const now = Date.now();
-        if (cachedData.length > 0) {
-          const cache = cachedData[0];
-          const cacheAge = now - cache.cached_at.getTime();
+          if (cachedData.length > 0) {
+            const cache = cachedData[0];
+            const cacheAge = Date.now() - cache.cached_at.getTime();
 
-          // Return cached data if valid
-          if (cacheAge < CACHE_DURATION_MS) {
-            return res.json(cache.data);
+            // Return cached data if valid
+            if (cacheAge < CACHE_DURATION_MS) {
+              res.set('X-Cache-Hit', 'true');
+              res.set('X-Cache-Age', `${Math.floor(cacheAge / 1000)}s`);
+              return res.json(cache.data);
+            }
           }
+        } catch (cacheError) {
+          console.error('Cache retrieval error:', cacheError);
+          // Continue to API call if cache fails
         }
       }
 
       // Fetch fresh data from X API
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
 
-      // Fetch user data
-      const user = await client.v2.userByUsername(req.params.username, {
+      const user = await client.v2.userByUsername(username, {
         "user.fields": [
           "id",
           "name",
@@ -62,7 +70,7 @@ export function registerRoutes(app: Express) {
       if (!user.data) {
         return res.status(404).json({
           error: "User not found",
-          details: `X user "${req.params.username}" does not exist`,
+          details: `X user "${username}" does not exist`,
         });
       }
 
@@ -79,7 +87,7 @@ export function registerRoutes(app: Express) {
         }
       }
 
-      // Format the response according to the new schema
+      // Format the response according to the schema
       const formattedData = {
         id: user.data.id,
         name: user.data.name,
@@ -109,23 +117,29 @@ export function registerRoutes(app: Express) {
 
       // Store in cache (unless bypassed)
       if (!BYPASS_CACHE) {
-        await db
-          .insert(xUserCache)
-          .values({
-            username: req.params.username,
-            data: formattedData,
-            cached_at: new Date(),
-          })
-          .onConflictDoUpdate({
-            target: xUserCache.username,
-            set: {
+        try {
+          await db
+            .insert(xUserCache)
+            .values({
+              username: username,
               data: formattedData,
               cached_at: new Date(),
-            },
-          });
+            })
+            .onConflictDoUpdate({
+              target: xUserCache.username,
+              set: {
+                data: formattedData,
+                cached_at: new Date(),
+              },
+            });
+        } catch (cacheError) {
+          console.error('Cache update error:', cacheError);
+          // Continue despite cache error
+        }
       }
 
-      res.set("Cache-Control", "public, max-age=300");
+      res.set('X-Cache-Hit', 'false');
+      res.set('Cache-Control', 'public, max-age=300');
       res.json(formattedData);
     } catch (error: any) {
       console.error("X API error:", error);
@@ -170,14 +184,4 @@ export function registerRoutes(app: Express) {
       });
     }
   });
-}
-
-function formatTweetCount(count: number): string {
-  if (count >= 1000000) {
-    return `${(count / 1000000).toFixed(1)}M`;
-  }
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}K`;
-  }
-  return count.toString();
 }
