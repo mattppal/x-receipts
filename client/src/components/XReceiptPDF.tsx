@@ -1,79 +1,95 @@
-import { Document, Page, Text, View, StyleSheet, Image, Font } from "@react-pdf/renderer";
-import { format } from "date-fns";
-
-// Register fonts if needed
-Font.register({
-  family: "Inter",
-  src: "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2",
-});
+import React from 'react';
+import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
+import { format } from 'date-fns';
 
 const styles = StyleSheet.create({
   page: {
+    flexDirection: 'column',
+    backgroundColor: '#fff',
     padding: 30,
-    backgroundColor: "#ffffff",
-    fontFamily: "Inter",
+  },
+  section: {
+    margin: 10,
+    padding: 10,
   },
   header: {
+    fontSize: 20,
     marginBottom: 20,
-    textAlign: "center",
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 10,
-  },
-  date: {
-    fontSize: 12,
-    color: "#666666",
-    marginBottom: 5,
-  },
-  orderNumber: {
-    fontSize: 10,
-    color: "#999999",
-  },
-  separator: {
-    borderBottom: "1 solid #eaeaea",
-    marginVertical: 15,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignSelf: "center",
-    marginBottom: 20,
+    textAlign: 'center',
   },
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   label: {
     fontSize: 12,
-    color: "#666666",
+    color: '#666',
   },
   value: {
     fontSize: 12,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
-  pinnedTweet: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 5,
-  },
-  tweetText: {
-    fontSize: 11,
-    marginBottom: 5,
-  },
-  tweetMeta: {
-    fontSize: 9,
-    color: "#666666",
+  separator: {
+    borderBottom: 1,
+    borderBottomColor: '#ddd',
+    borderBottomStyle: 'dashed',
+    marginVertical: 15,
   },
   footer: {
     marginTop: 30,
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 10,
-    color: "#999999",
+    color: '#666',
   },
 });
 
-// This file can be deleted as we're no longer using a separate PDF component
+export function XReceiptPDF({ user }: { user: any }) {
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.section}>
+          <Text style={styles.header}>X Receipt</Text>
+          
+          <View style={styles.row}>
+            <Text style={styles.label}>CUSTOMER:</Text>
+            <Text style={styles.value}>{user.name}</Text>
+          </View>
+          
+          <View style={styles.row}>
+            <Text style={styles.label}>@USERNAME:</Text>
+            <Text style={styles.value}>{user.username}</Text>
+          </View>
+          
+          <View style={styles.separator} />
+          
+          <View style={styles.row}>
+            <Text style={styles.label}>POSTS:</Text>
+            <Text style={styles.value}>{user.public_metrics.tweet_count.toLocaleString()}</Text>
+          </View>
+          
+          <View style={styles.row}>
+            <Text style={styles.label}>FOLLOWERS:</Text>
+            <Text style={styles.value}>{user.public_metrics.followers_count.toLocaleString()}</Text>
+          </View>
+          
+          <View style={styles.row}>
+            <Text style={styles.label}>FOLLOWING:</Text>
+            <Text style={styles.value}>{user.public_metrics.following_count.toLocaleString()}</Text>
+          </View>
+          
+          <View style={styles.separator} />
+          
+          <View style={styles.row}>
+            <Text style={styles.label}>MEMBER SINCE:</Text>
+            <Text style={styles.value}>{format(new Date(user.created_at), 'MMM dd, yyyy')}</Text>
+          </View>
+          
+          <Text style={styles.footer}>
+            Generated on {format(new Date(), 'MMMM dd, yyyy')}
+          </Text>
+        </View>
+      </Page>
+    </Document>
+  );
+}
