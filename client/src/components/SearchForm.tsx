@@ -17,7 +17,7 @@ type SearchFormProps = {
 export function SearchForm({ onSearch }: SearchFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  
+
   const form = useForm<z.infer<typeof searchSchema>>({
     defaultValues: {
       username: "",
@@ -48,9 +48,9 @@ export function SearchForm({ onSearch }: SearchFormProps) {
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormControl>
-                <Input 
-                  placeholder="Enter GitHub username" 
-                  {...field} 
+                <Input
+                  placeholder="Enter X username"
+                  {...field}
                   disabled={isGenerating}
                 />
               </FormControl>
