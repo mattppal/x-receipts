@@ -9,14 +9,14 @@ type ReceiptLayoutProps = PropsWithChildren<{
 
 export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare }: ReceiptLayoutProps) {
   return (
-    <div className="bg-white p-8 max-w-md mx-auto shadow-lg font-mono text-sm" style={{
+    <div className="bg-white p-12 max-w-md mx-auto shadow-lg font-mono text-sm rounded-lg" style={{
       backgroundImage: `repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 2px)`
     }}>
-      <div className="space-y-4" id="receipt">
+      <div className="space-y-6" id="receipt">
         {children}
       </div>
       
-      <div className="mt-6 flex justify-center gap-4">
+      <div className="mt-8 flex justify-center gap-4">
         {onDownload && (
           <button
             onClick={onDownload}
@@ -48,26 +48,26 @@ export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare }: 
 
 export function ReceiptLine({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex justify-between">
-      <span>{label}</span>
-      <span>{value}</span>
+    <div className="flex justify-between items-start">
+      <span className="flex-shrink-0">{label}</span>
+      <span className="text-right ml-4 flex-1">{value}</span>
     </div>
   );
 }
 
 export function ReceiptHeader({ title, date }: { title: string; date: string }) {
   return (
-    <div className="text-center space-y-1">
-      <div className="text-lg font-bold">{title}</div>
+    <div className="text-center space-y-2">
+      <div className="text-xl font-bold">{title}</div>
       <div className="text-sm">{date}</div>
-      <Separator className="my-4" />
+      <Separator className="my-6" />
     </div>
   );
 }
 
 export function ReceiptFooter({ text }: { text: string }) {
   return (
-    <div className="text-center mt-4 pt-4 border-t border-dashed">
+    <div className="text-center mt-6 pt-6 border-t border-dashed">
       <div className="text-sm">{text}</div>
     </div>
   );

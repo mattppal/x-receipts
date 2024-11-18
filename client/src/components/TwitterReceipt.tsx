@@ -24,10 +24,23 @@ export function TwitterReceipt({ username }: TwitterReceiptProps) {
     const receipt = document.getElementById('receipt');
     if (receipt) {
       try {
-        const canvas = await html2canvas(receipt);
+        const canvas = await html2canvas(receipt, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          windowWidth: receipt.scrollWidth,
+          windowHeight: receipt.scrollHeight,
+          x: 0,
+          y: 0,
+          width: receipt.offsetWidth,
+          height: receipt.offsetHeight,
+          useCORS: true,
+          logging: false,
+          padding: 20
+        });
+        
         const link = document.createElement('a');
         link.download = `twitter-receipt-${username}.png`;
-        link.href = canvas.toDataURL();
+        link.href = canvas.toDataURL('image/png');
         link.click();
       } catch (err) {
         toast({
@@ -43,20 +56,28 @@ export function TwitterReceipt({ username }: TwitterReceiptProps) {
     const receipt = document.getElementById('receipt');
     if (receipt) {
       try {
-        const canvas = await html2canvas(receipt);
-        const imgData = canvas.toDataURL('image/png');
+        const canvas = await html2canvas(receipt, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          windowWidth: receipt.scrollWidth,
+          windowHeight: receipt.scrollHeight,
+          x: 0,
+          y: 0,
+          width: receipt.offsetWidth,
+          height: receipt.offsetHeight,
+          useCORS: true,
+          logging: false,
+          padding: 20
+        });
         
-        // Initialize PDF
+        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'px',
-          format: [canvas.width, canvas.height]
+          format: [canvas.width + 40, canvas.height + 40]
         });
         
-        // Add image to PDF
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        
-        // Save PDF
+        pdf.addImage(imgData, 'PNG', 20, 20, canvas.width, canvas.height);
         pdf.save(`twitter-receipt-${username}.pdf`);
       } catch (err) {
         toast({
@@ -119,9 +140,14 @@ export function TwitterReceipt({ username }: TwitterReceiptProps) {
       <div className="space-y-2">
         <ReceiptLine label="CUSTOMER:" value={user.name} />
         <ReceiptLine label="@USERNAME:" value={user.username} />
-        <ReceiptLine label="TWEETS:" value={user.tweet_count} />
-        <ReceiptLine label="FOLLOWERS:" value={user.followers_count} />
-        <ReceiptLine label="FOLLOWING:" value={user.following_count} />
+        <ReceiptLine label="BIO:" value={user.description || 'No bio'} />
+        <ReceiptLine label="LOCATION:" value={user.location || 'Not specified'} />
+        <ReceiptLine label="TWEETS:" value={user.tweet_count.toLocaleString()} />
+        <ReceiptLine label="FOLLOWERS:" value={user.followers_count.toLocaleString()} />
+        <ReceiptLine label="FOLLOWING:" value={user.following_count.toLocaleString()} />
+        <ReceiptLine label="LISTED:" value={user.listed_count.toLocaleString()} />
+        <ReceiptLine label="LIKES:" value={user.likes_count.toLocaleString()} />
+        <ReceiptLine label="VERIFIED:" value={user.verified ? 'Yes' : 'No'} />
         <ReceiptLine 
           label="MEMBER SINCE:" 
           value={format(new Date(user.created_at), 'MMM dd, yyyy')} 
