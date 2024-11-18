@@ -3,10 +3,11 @@ import { Separator } from './ui/separator';
 
 type ReceiptLayoutProps = PropsWithChildren<{
   onDownload?: () => void;
+  onDownloadPDF?: () => void;
   onShare?: () => void;
 }>;
 
-export function ReceiptLayout({ children, onDownload, onShare }: ReceiptLayoutProps) {
+export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare }: ReceiptLayoutProps) {
   return (
     <div className="bg-white p-8 max-w-md mx-auto shadow-lg font-mono text-sm" style={{
       backgroundImage: `repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 2px)`
@@ -21,7 +22,15 @@ export function ReceiptLayout({ children, onDownload, onShare }: ReceiptLayoutPr
             onClick={onDownload}
             className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded transition"
           >
-            Download
+            Download PNG
+          </button>
+        )}
+        {onDownloadPDF && (
+          <button
+            onClick={onDownloadPDF}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded transition"
+          >
+            Download PDF
           </button>
         )}
         {onShare && (

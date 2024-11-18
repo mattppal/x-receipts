@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import useSWR from 'swr';
 import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { useToast } from '../hooks/use-toast';
 import { ReceiptLayout, ReceiptHeader, ReceiptLine, ReceiptFooter } from './ReceiptLayout';
@@ -31,6 +32,35 @@ export function TwitterReceipt({ username }: TwitterReceiptProps) {
         toast({
           title: "Error",
           description: "Failed to download receipt",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [username, toast]);
+
+  const handleDownloadPDF = useCallback(async () => {
+    const receipt = document.getElementById('receipt');
+    if (receipt) {
+      try {
+        const canvas = await html2canvas(receipt);
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Initialize PDF
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+        
+        // Add image to PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        
+        // Save PDF
+        pdf.save(`twitter-receipt-${username}.pdf`);
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Failed to download PDF",
           variant: "destructive",
         });
       }
@@ -68,7 +98,11 @@ export function TwitterReceipt({ username }: TwitterReceiptProps) {
   }
 
   return (
-    <ReceiptLayout onDownload={handleDownload} onShare={handleShare}>
+    <ReceiptLayout 
+      onDownload={handleDownload} 
+      onDownloadPDF={handleDownloadPDF}
+      onShare={handleShare}
+    >
       <ReceiptHeader 
         title="TWITTER RECEIPT"
         date={format(new Date(), 'EEEE, MMMM dd, yyyy')}
