@@ -13,6 +13,10 @@ export const xUserSchema = z.object({
   listed_count: z.number(),
   likes_count: z.number(),
   verified: z.boolean().optional(),
+  protected: z.boolean().optional(),
+  url: z.string().optional(),
+  entities: z.object({}).optional(),
+  pinned_tweet_id: z.string().optional()
 });
 
 export type XUser = z.infer<typeof xUserSchema>;
@@ -21,7 +25,12 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function fetchXUser(username: string, retryCount = 3): Promise<XUser> {
   try {
-    const response = await fetch(`/api/x/users/${username}`);
+    const response = await fetch(`/api/x/users/${username}`, {
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'  // Bypass browser cache for fresh data
+      }
+    });
     const data = await response.json();
     
     if (!response.ok) {
@@ -34,6 +43,14 @@ export async function fetchXUser(username: string, retryCount = 3): Promise<XUse
           message: 'Rate limit exceeded',
           details: `Please try again ${resetTime ? `after ${resetTime.toLocaleTimeString()}` : 'later'}`,
           retryAfter: parseInt(retryAfter, 10)
+        };
+      }
+
+      if (response.status === 401) {
+        throw {
+          status: 401,
+          message: 'Authentication error',
+          details: 'Please check your API token configuration'
         };
       }
       

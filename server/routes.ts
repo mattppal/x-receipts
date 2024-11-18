@@ -13,7 +13,18 @@ export function registerRoutes(app: Express) {
     try {
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
       const user = await client.v2.userByUsername(req.params.username, {
-        'user.fields': ['public_metrics', 'created_at', 'profile_image_url', 'description', 'location', 'verified']
+        'user.fields': [
+          'public_metrics',
+          'created_at',
+          'profile_image_url',
+          'description',
+          'location',
+          'verified',
+          'protected',
+          'url',
+          'entities',
+          'pinned_tweet_id'
+        ]
       });
       
       if (!user.data) {
@@ -23,6 +34,7 @@ export function registerRoutes(app: Express) {
         });
       }
 
+      // Enhanced user data with additional fields
       const userData = {
         username: user.data.username,
         name: user.data.name,
@@ -32,12 +44,18 @@ export function registerRoutes(app: Express) {
         listed_count: user.data.public_metrics?.listed_count ?? 0,
         likes_count: user.data.public_metrics?.like_count ?? 0,
         created_at: user.data.created_at,
-        profile_image_url: user.data.profile_image_url,
+        profile_image_url: user.data.profile_image_url?.replace('_normal', ''), // Get full-size image
         description: user.data.description,
         location: user.data.location,
         verified: user.data.verified ?? false,
+        protected: user.data.protected ?? false,
+        url: user.data.url,
+        entities: user.data.entities,
+        pinned_tweet_id: user.data.pinned_tweet_id
       };
 
+      // Set cache control headers
+      res.set('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
       res.json(userData);
     } catch (error: any) {
       console.error('X API error:', error);
@@ -46,11 +64,32 @@ export function registerRoutes(app: Express) {
         const resetTime = error.rateLimit?.reset 
           ? new Date(error.rateLimit.reset * 1000).toISOString()
           : undefined;
+        
+        // Set Retry-After header if available
+        if (error.rateLimit?.reset) {
+          const retryAfter = Math.max(1, Math.ceil((error.rateLimit.reset * 1000 - Date.now()) / 1000));
+          res.set('Retry-After', retryAfter.toString());
+        }
           
         return res.status(429).json({ 
           error: 'X API rate limit exceeded',
           details: `Please try again later${resetTime ? ` after ${resetTime}` : ''}`,
           resetTime
+        });
+      }
+
+      // Handle other specific error codes
+      if (error.code === 401) {
+        return res.status(401).json({
+          error: 'Authentication error',
+          details: 'Invalid or expired API token'
+        });
+      }
+
+      if (error.code === 403) {
+        return res.status(403).json({
+          error: 'Access denied',
+          details: 'The request is not authorized'
         });
       }
 
