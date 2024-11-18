@@ -147,7 +147,7 @@ export function TwitterReceipt({ username }: TwitterReceiptProps) {
         <ReceiptLine label="FOLLOWING:" value={user.following_count.toLocaleString()} />
         <ReceiptLine label="LISTED:" value={user.listed_count.toLocaleString()} />
         <ReceiptLine label="LIKES:" value={user.likes_count.toLocaleString()} />
-        <ReceiptLine label="VERIFIED:" value={user.verified ? 'Yes' : 'No'} />
+        <ReceiptLine label="VERIFIED:" value={user.verified ? 'Yes' : 'No'} verified={user.verified} />
         <ReceiptLine 
           label="MEMBER SINCE:" 
           value={format(new Date(user.created_at), 'MMM dd, yyyy')} 
