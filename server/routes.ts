@@ -5,8 +5,8 @@ export function registerRoutes(app: Express) {
   app.get('/api/twitter/users/:username', async (req, res) => {
     if (!process.env.TWITTER_BEARER_TOKEN) {
       return res.status(500).json({ 
-        error: 'Twitter API token not configured',
-        details: 'Missing TWITTER_BEARER_TOKEN environment variable'
+        error: 'X API token not configured',
+        details: 'Missing X_BEARER_TOKEN environment variable'
       });
     }
 
@@ -19,7 +19,7 @@ export function registerRoutes(app: Express) {
       if (!user.data) {
         return res.status(404).json({ 
           error: 'User not found',
-          details: `Twitter user "${req.params.username}" does not exist`
+          details: `X user "${req.params.username}" does not exist`
         });
       }
 
@@ -40,7 +40,7 @@ export function registerRoutes(app: Express) {
 
       res.json(userData);
     } catch (error: any) {
-      console.error('Twitter API error:', error);
+      console.error('X API error:', error);
       
       if (error.code === 429 || (error.errors && error.errors[0]?.code === 88)) {
         const resetTime = error.rateLimit?.reset 
@@ -48,14 +48,14 @@ export function registerRoutes(app: Express) {
           : undefined;
           
         return res.status(429).json({ 
-          error: 'Twitter API rate limit exceeded',
+          error: 'X API rate limit exceeded',
           details: `Please try again later${resetTime ? ` after ${resetTime}` : ''}`,
           resetTime
         });
       }
 
       res.status(500).json({ 
-        error: 'Failed to fetch Twitter data',
+        error: 'Failed to fetch X data',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
