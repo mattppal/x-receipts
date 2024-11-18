@@ -14,7 +14,7 @@ import { fetchXUser, fetchPersonalizedTrends } from "../lib/x";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
-import { LinkIcon, TrendingUp } from "./ui/icons";
+import { Icons } from "./ui/icons";
 
 type XReceiptProps = {
   username: string;
@@ -224,7 +224,7 @@ export function XReceipt({ username }: XReceiptProps) {
           <Separator className="my-4 border-dashed" />
           <div className="space-y-2">
             <div className="text-center font-bold mb-2 flex items-center justify-center gap-2">
-              <TrendingUp className="w-4 h-4" />
+              <Icons.TrendingUp className="w-4 h-4" />
               TRENDING FOR YOU
             </div>
             {trendsData.data.map((trend, index) => (
@@ -269,7 +269,7 @@ export function XReceipt({ username }: XReceiptProps) {
                   rel="noopener noreferrer"
                   className="text-xs text-blue-500 hover:underline flex items-center gap-1"
                 >
-                  <LinkIcon className="w-3 h-3" />
+                  <Icons.LinkIcon className="w-3 h-3" />
                   View on X
                 </a>
               </div>
