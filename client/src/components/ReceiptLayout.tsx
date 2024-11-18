@@ -186,20 +186,30 @@ export function ReceiptHeader({
   );
 }
 
-export function ReceiptFooter({ text, url }: { text: string; url?: string }) {
+export function ReceiptFooter({ 
+  text, 
+  url, 
+  footerLink 
+}: { 
+  text: string; 
+  url?: string;
+  footerLink?: React.ReactNode;
+}) {
   return (
     <div className="text-center mt-6 pt-6 border-t border-dashed space-y-4">
       {url && (
         <div className="text-sm space-y-1 text-gray-600 flex items-center justify-center gap-1">
           <LinkIcon className="w-4 h-4" />
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-          >
-            {url}
-          </a>
+          {footerLink || (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+            >
+              {url}
+            </a>
+          )}
         </div>
       )}
       <div className="text-sm font-bold tracking-wider">{text}</div>
