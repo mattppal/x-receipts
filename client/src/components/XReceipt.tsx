@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import useSWR from "swr";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import { useToast } from "../hooks/use-toast";
 import {
   ReceiptLayout,
@@ -137,8 +137,8 @@ export function XReceipt({ username }: XReceiptProps) {
     return <div className="text-center">Loading...</div>;
   }
 
-  // Generate a unique order number based on username and current timestamp
   const orderNumber = `${username.toUpperCase()}-${Date.now().toString(36)}`;
+  const accountAge = differenceInYears(new Date(), new Date(user.created_at));
 
   return (
     <ReceiptLayout
@@ -146,6 +146,7 @@ export function XReceipt({ username }: XReceiptProps) {
       onDownloadPDF={handleDownloadPDF}
       onShare={handleShare}
       isVerified={user.verified}
+      accountAge={accountAge}
     >
       <ReceiptHeader
         title="X RECEIPT"

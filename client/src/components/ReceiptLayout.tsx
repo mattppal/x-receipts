@@ -39,74 +39,6 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
   );
 }
 
-function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-  const tearSize = 16; // Slightly larger tears for better visibility
-
-  useEffect(() => {
-    if (containerRef.current) {
-      const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          setWidth(entry.contentRect.width);
-        }
-      });
-
-      resizeObserver.observe(containerRef.current);
-      return () => resizeObserver.disconnect();
-    }
-  }, []);
-
-  const tiles = Math.ceil(width / tearSize);
-  const rawTiles = width / tearSize;
-  const offset = ((tiles - rawTiles) * tearSize) / 2;
-  const margin = -(tearSize) / 2;
-
-  return (
-    <div
-      ref={containerRef}
-      className="absolute left-0 right-0"
-      style={{
-        height: tearSize,
-        top: isUnder ? "100%" : -tearSize,
-        zIndex: 1,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",
-      }}
-    >
-      {/* Uniform triangular tears */}
-      <div className="flex w-full" style={{ marginLeft: -offset, marginRight: -offset }}>
-        {Array.from({ length: tiles }).map((_, i) => (
-          <div
-            key={`tear-${i}`}
-            style={{
-              width: tearSize,
-              height: tearSize,
-              backgroundColor: "white",
-              clipPath: isUnder
-                ? "polygon(50% 100%, 0 0, 100% 0)"
-                : "polygon(50% 0, 0 100%, 100% 100%)",
-              position: "relative",
-              zIndex: 1,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Subtle shadow overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: isUnder
-            ? "linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, transparent 50%)"
-            : "linear-gradient(to top, rgba(0,0,0,0.02) 0%, transparent 50%)",
-        }}
-      />
-    </div>
-  );
-}
-
 export function ReceiptLayout({
   children,
   onDownload,
@@ -127,19 +59,15 @@ export function ReceiptLayout({
         const baseSpread = 4;
         const maxSpread = 12;
 
-        // Calculate dynamic shadow values based on content height
-        const heightFactor = Math.min(contentHeight / 1000, 1); // Normalize height
+        const heightFactor = Math.min(contentHeight / 1000, 1);
         const dynamicBlur = baseBlur + (maxBlur - baseBlur) * heightFactor;
-        const dynamicSpread =
-          baseSpread + (maxSpread - baseSpread) * heightFactor;
+        const dynamicSpread = baseSpread + (maxSpread - baseSpread) * heightFactor;
 
-        // Update the shadow style
         wrapperRef.current.style.filter = `drop-shadow(0 ${dynamicSpread}px ${dynamicBlur}px rgba(0, 0, 0, ${0.1 + heightFactor * 0.1}))`;
       }
     };
 
     updateShadow();
-    // Add resize observer to update shadow when content changes
     const observer = new ResizeObserver(updateShadow);
     if (contentRef.current) {
       observer.observe(contentRef.current);
@@ -165,7 +93,6 @@ export function ReceiptLayout({
           backgroundSize: "auto, 100% 100%",
         }}
       >
-        <TornEdge isUnder={true} />
         <div className="p-8">
           <div ref={contentRef} className="space-y-6" id="receipt">
             {children}
@@ -173,9 +100,6 @@ export function ReceiptLayout({
         </div>
         <VerificationStamp isVerified={isVerified || false} />
         {accountAge !== undefined && <AccountAgeStamp years={accountAge} />}
-        <div className="rotate-180">
-          <TornEdge />
-        </div>
       </div>
       {(onDownload || onDownloadPDF || onShare) && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-sm rounded-full p-2 flex gap-2">
