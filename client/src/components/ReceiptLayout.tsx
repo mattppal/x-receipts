@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useRef, useState } from "react";
+import { PropsWithChildren, useEffect, useRef } from "react";
 import { Separator } from "./ui/separator";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
 
@@ -84,6 +84,7 @@ export function ReceiptLayout({
     <div className="flex justify-center items-center py-8">
       <div
         ref={wrapperRef}
+        id="receipt-wrapper"
         className="relative bg-white max-w-md w-full mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1"
         style={{
           backgroundImage: `
