@@ -2,15 +2,32 @@ import { PropsWithChildren, useEffect, useRef } from "react";
 import { Separator } from "./ui/separator";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
 import { Button } from "./ui/button";
+import * as React from "react";
+import { twMerge } from "tailwind-merge";
+import { PDFDownloadLink, Document, Page } from "@react-pdf/renderer";
+import { Download } from "lucide-react";
 
 type ReceiptLayoutProps = PropsWithChildren<{
-  username?: string;
+  username: string;
+  metrics?: {
+    followers: number;
+    following: number;
+    tweets: number;
+  };
   onDownload?: () => void;
   onDownloadPDF?: React.ReactNode;
   onShare?: () => void;
   isVerified?: boolean;
   accountAge?: number;
 }>;
+
+const PDFReceipt = ({ children }) => (
+  <Document>
+    <Page size="A4" style={{ padding: 30, fontFamily: "Helvetica" }}>
+      {children}
+    </Page>
+  </Document>
+);
 
 function AccountAgeStamp({ years }: { years: number }) {
   return (
@@ -41,12 +58,16 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
 }
 
 export function ReceiptLayout({
-  children,
+  username,
+  metrics,
   onDownload,
   onDownloadPDF,
   onShare,
   isVerified,
   accountAge,
+  children,
+  className,
+  ...props
 }: ReceiptLayoutProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -83,7 +104,10 @@ export function ReceiptLayout({
   }, []);
 
   return (
-    <div className="flex justify-center items-center py-8">
+    <div className={twMerge(
+      "flex justify-center items-center py-8",
+      className
+    )}>
       <div
         ref={wrapperRef}
         id="receipt-wrapper"
@@ -98,6 +122,24 @@ export function ReceiptLayout({
       >
         <div className="p-8">
           <div ref={contentRef} className="space-y-6" id="receipt">
+            <PDFDownloadLink
+              document={<PDFReceipt>{children}</PDFReceipt>}
+              fileName={`x-receipt-${username}.pdf`}
+            >
+              {({ loading }) => (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={loading}
+                  onClick={() => {
+                    console.log("Downloading PDF for", username);
+                  }}
+                >
+                  <Download className="size-4" />
+                  <span className="sr-only">Download Receipt</span>
+                </Button>
+              )}
+            </PDFDownloadLink>
             {children}
           </div>
         </div>

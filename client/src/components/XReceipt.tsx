@@ -13,10 +13,8 @@ import {
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
-import { Icons } from "./ui/icons";
 import { Link as LinkIcon } from "lucide-react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { XReceiptPDF } from "./XReceiptPDF";
 
 type XReceiptProps = {
   username: string;
