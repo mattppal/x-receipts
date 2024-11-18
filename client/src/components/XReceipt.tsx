@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import useSWR from "swr";
 import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import { format, differenceInYears } from "date-fns";
 import { fetchXUser } from "../lib/x";
 import { useToast } from "../hooks/use-toast";
@@ -16,6 +15,8 @@ import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
 import { Icons } from "./ui/icons";
 import { Link as LinkIcon } from "lucide-react";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { XReceiptPDF } from "./XReceiptPDF";
 
 type XReceiptProps = {
   username: string;
@@ -55,43 +56,6 @@ export function XReceipt({ username }: XReceiptProps) {
         toast({
           title: "Error",
           description: "Failed to download receipt",
-          variant: "destructive",
-        });
-      }
-    }
-  }, [username, toast]);
-
-  const handleDownloadPDF = useCallback(async () => {
-    const receipt = document.getElementById("receipt");
-    if (receipt) {
-      try {
-        const canvas = await html2canvas(receipt, {
-          backgroundColor: "#ffffff",
-          scale: 2,
-          windowWidth: receipt.scrollWidth,
-          windowHeight: receipt.scrollHeight,
-          x: 0,
-          y: 0,
-          width: receipt.offsetWidth,
-          height: receipt.offsetHeight,
-          useCORS: true,
-          logging: false,
-          padding: 20,
-        });
-
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "px",
-          format: [canvas.width + 40, canvas.height + 40],
-        });
-
-        pdf.addImage(imgData, "PNG", 20, 20, canvas.width, canvas.height);
-        pdf.save(`x-receipt-${username}.pdf`);
-      } catch (err) {
-        toast({
-          title: "Error",
-          description: "Failed to download PDF",
           variant: "destructive",
         });
       }
@@ -146,13 +110,21 @@ export function XReceipt({ username }: XReceiptProps) {
   return (
     <ReceiptLayout
       onDownload={handleDownload}
-      onDownloadPDF={handleDownloadPDF}
+      onDownloadPDF={
+        <PDFDownloadLink
+          document={<XReceiptPDF user={user} />}
+          fileName={`x-receipt-${username}.pdf`}
+        >
+          {({ loading }) =>
+            loading ? "Preparing PDF..." : "Download PDF"
+          }
+        </PDFDownloadLink>
+      }
       onShare={handleShare}
       isVerified={user.verified}
       accountAge={accountAge}
     >
       <ReceiptHeader
-        title="X RECEIPT"
         date={format(new Date(), "EEEE, MMMM dd, yyyy")}
         orderNumber={orderNumber}
       />
@@ -195,7 +167,10 @@ export function XReceipt({ username }: XReceiptProps) {
       <Separator className="my-4 border-dashed" />
 
       <div className="space-y-2">
-        <ReceiptLine label="POSTS:" value={user.public_metrics.tweet_count.toLocaleString()} />
+        <ReceiptLine
+          label="POSTS:"
+          value={user.public_metrics.tweet_count.toLocaleString()}
+        />
         <ReceiptLine
           label="FOLLOWERS:"
           value={user.public_metrics.followers_count.toLocaleString()}
@@ -232,18 +207,25 @@ export function XReceipt({ username }: XReceiptProps) {
             <div className="border rounded p-3 bg-gray-50">
               <div className="text-sm mb-2">{user.pinned_tweet.text}</div>
               <div className="text-xs text-gray-500 flex items-center gap-4">
-                <span>{format(new Date(user.pinned_tweet.created_at), "MMM dd, yyyy")}</span>
+                <span>
+                  {format(
+                    new Date(user.pinned_tweet.created_at),
+                    "MMM dd, yyyy",
+                  )}
+                </span>
                 <div className="flex gap-4">
                   <span>🔄 {user.pinned_tweet.retweet_count || 0}</span>
                   <span>💬 {user.pinned_tweet.reply_count || 0}</span>
                   <span>❤️ {user.pinned_tweet.like_count || 0}</span>
                 </div>
               </div>
-              {user.pinned_tweet.media && user.pinned_tweet.media.length > 0 && (
-                <div className="mt-2 text-xs text-gray-500">
-                  📷 {user.pinned_tweet.media.length} media attachment{user.pinned_tweet.media.length !== 1 ? 's' : ''}
-                </div>
-              )}
+              {user.pinned_tweet.media &&
+                user.pinned_tweet.media.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    📷 {user.pinned_tweet.media.length} media attachment
+                    {user.pinned_tweet.media.length !== 1 ? "s" : ""}
+                  </div>
+                )}
               <div className="mt-2">
                 <a
                   href={`https://x.com/${user.username}/status/${user.pinned_tweet_id}`}
@@ -260,7 +242,7 @@ export function XReceipt({ username }: XReceiptProps) {
         </>
       )}
 
-      <ReceiptFooter 
+      <ReceiptFooter
         text="THANK YOU FOR POSTING!"
         url={profileUrl}
         footerLink={
