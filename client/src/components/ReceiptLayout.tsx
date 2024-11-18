@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useRef, useState, useMemo } from "react";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import { Separator } from "./ui/separator";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
 
@@ -8,7 +8,21 @@ type ReceiptLayoutProps = PropsWithChildren<{
   onDownloadPDF?: () => void;
   onShare?: () => void;
   isVerified?: boolean;
+  accountAge?: number;
 }>;
+
+function AccountAgeStamp({ years }: { years: number }) {
+  return (
+    <div className="absolute bottom-16 right-8 transform -rotate-12">
+      <div className="border-4 border-red-500 rounded-full w-24 h-24 flex items-center justify-center">
+        <div className="text-red-500 flex flex-col items-center">
+          <span className="text-2xl font-bold">{years}</span>
+          <span className="text-xs font-bold mt-1">YEARS</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function VerificationStamp({ isVerified }: { isVerified: boolean }) {
   if (isVerified) return null;
@@ -51,15 +65,14 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
   return (
     <div
       ref={containerRef}
-      className="relative w-full"
+      className="absolute left-0 right-0"
       style={{
         height: tearSize,
-        marginTop: isUnder ? margin : 0,
-        marginBottom: isUnder ? 0 : margin,
+        top: isUnder ? "100%" : -tearSize,
+        zIndex: 1,
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-start",
-        zIndex: 0,
       }}
     >
       {/* Uniform triangular tears */}
@@ -100,6 +113,7 @@ export function ReceiptLayout({
   onDownloadPDF,
   onShare,
   isVerified,
+  accountAge,
 }: ReceiptLayoutProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -151,14 +165,6 @@ export function ReceiptLayout({
           backgroundSize: "auto, 100% 100%",
         }}
       >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
-            backgroundSize: "200px 200px",
-            mixBlendMode: "multiply",
-          }}
-        />
         <TornEdge isUnder={true} />
         <div className="p-8">
           <div ref={contentRef} className="space-y-6" id="receipt">
@@ -166,6 +172,7 @@ export function ReceiptLayout({
           </div>
         </div>
         <VerificationStamp isVerified={isVerified || false} />
+        {accountAge !== undefined && <AccountAgeStamp years={accountAge} />}
         <div className="rotate-180">
           <TornEdge />
         </div>
