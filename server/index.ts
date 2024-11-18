@@ -28,9 +28,8 @@ app.use(express.urlencoded({ extended: false }));
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
-  const PORT = 5000;
+  // Use port 5000 for API server only
+  const PORT = process.env.PORT || 5000;
   server.listen(PORT, "0.0.0.0", () => {
     const formattedTime = new Date().toLocaleTimeString("en-US", {
       hour: "2-digit",
@@ -39,6 +38,6 @@ app.use(express.urlencoded({ extended: false }));
       hour12: true,
     });
 
-    console.log(`${formattedTime} [express] serving on port ${PORT}`);
+    console.log(`${formattedTime} [express] API server serving on port ${PORT}`);
   });
 })();

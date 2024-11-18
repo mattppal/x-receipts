@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect, useRef } from "react";
 import { Separator } from "./ui/separator";
 import { CheckCircle } from "lucide-react";
 
@@ -82,9 +82,46 @@ export function ReceiptLayout({
   onShare,
   isVerified,
 }: ReceiptLayoutProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateShadow = () => {
+      if (contentRef.current && wrapperRef.current) {
+        const contentHeight = contentRef.current.scrollHeight;
+        const baseBlur = 8;
+        const maxBlur = 24;
+        const baseSpread = 4;
+        const maxSpread = 12;
+        
+        // Calculate dynamic shadow values based on content height
+        const heightFactor = Math.min(contentHeight / 1000, 1); // Normalize height
+        const dynamicBlur = baseBlur + (maxBlur - baseBlur) * heightFactor;
+        const dynamicSpread = baseSpread + (maxSpread - baseSpread) * heightFactor;
+        
+        // Update the shadow style
+        wrapperRef.current.style.filter = `drop-shadow(0 ${dynamicSpread}px ${dynamicBlur}px rgba(0, 0, 0, ${0.1 + heightFactor * 0.1}))`;
+      }
+    };
+
+    updateShadow();
+    // Add resize observer to update shadow when content changes
+    const observer = new ResizeObserver(updateShadow);
+    if (contentRef.current) {
+      observer.observe(contentRef.current);
+    }
+
+    return () => {
+      if (contentRef.current) {
+        observer.unobserve(contentRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="flex justify-center items-center py-8">
       <div
+        ref={wrapperRef}
         className="relative bg-white max-w-md w-full mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1"
         style={{
           backgroundImage: `
@@ -92,7 +129,6 @@ export function ReceiptLayout({
             radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, transparent 100%)
           `,
           backgroundSize: "auto, 100% 100%",
-          filter: "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))",
         }}
       >
         <div
@@ -105,7 +141,7 @@ export function ReceiptLayout({
         />
         <TornEdge />
         <div className="p-8">
-          <div className="space-y-6" id="receipt">
+          <div ref={contentRef} className="space-y-6" id="receipt">
             {children}
           </div>
         </div>
