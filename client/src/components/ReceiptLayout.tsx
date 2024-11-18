@@ -5,25 +5,31 @@ import { CheckCircle } from 'lucide-react';
 
 type ReceiptLayoutProps = PropsWithChildren<{
   username?: string;
+  onDownload?: () => void;
+  onDownloadPDF?: () => void;
+  onShare?: () => void;
 }>;
 
 function TornEdge() {
   return (
-    <div className="w-full h-6 overflow-hidden relative">
-      <div className="w-full h-12 absolute" style={{
+    <div className="w-full h-8 overflow-hidden relative">
+      <div className="w-full h-16 absolute" style={{
         backgroundImage: `
-          radial-gradient(circle at 50% 0%, transparent 12px, white 12px),
-          radial-gradient(circle at 50% -5px, rgba(0,0,0,0.1) 12px, transparent 12px)
+          radial-gradient(circle at 50% 0%, transparent 15px, white 15px),
+          radial-gradient(circle at 50% -5px, rgba(0,0,0,0.1) 15px, transparent 15px),
+          radial-gradient(circle at 25% 0%, transparent 12px, white 12px),
+          radial-gradient(circle at 75% 0%, transparent 12px, white 12px),
+          linear-gradient(90deg, rgba(0,0,0,0.05) 0%, transparent 50%, rgba(0,0,0,0.05) 100%)
         `,
-        backgroundSize: '24px 24px',
-        backgroundPosition: '0 -12px, 12px -12px',
-        backgroundRepeat: 'repeat-x',
+        backgroundSize: '30px 30px, 30px 30px, 30px 30px, 30px 30px, 100% 100%',
+        backgroundPosition: '0 -15px, 15px -15px, -7.5px -15px, 22.5px -15px, 0 0',
+        backgroundRepeat: 'repeat-x, repeat-x, repeat-x, repeat-x, no-repeat',
       }} />
     </div>
   );
 }
 
-export function ReceiptLayout({ children, username }: ReceiptLayoutProps) {
+export function ReceiptLayout({ children, username, onDownload, onDownloadPDF, onShare }: ReceiptLayoutProps) {
   return (
     <div className="flex justify-center items-center py-8">
       <div 
@@ -66,6 +72,34 @@ export function ReceiptLayout({ children, username }: ReceiptLayoutProps) {
           <TornEdge />
         </div>
       </div>
+      {(onDownload || onDownloadPDF || onShare) && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-sm rounded-full p-2 flex gap-2">
+          {onDownload && (
+            <button
+              onClick={onDownload}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
+            >
+              Download PNG
+            </button>
+          )}
+          {onDownloadPDF && (
+            <button
+              onClick={onDownloadPDF}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
+            >
+              Download PDF
+            </button>
+          )}
+          {onShare && (
+            <button
+              onClick={onShare}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
+            >
+              Share
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
