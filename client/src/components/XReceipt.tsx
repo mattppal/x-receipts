@@ -3,7 +3,7 @@ import useSWR from "swr";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { format, differenceInYears } from "date-fns";
-import { fetchXUser } from "../lib/x"; // Add this import
+import { fetchXUser } from "../lib/x";
 import { useToast } from "../hooks/use-toast";
 import {
   ReceiptLayout,
@@ -175,6 +175,20 @@ export function XReceipt({ username }: XReceiptProps) {
         <ReceiptLine
           label="LOCATION:"
           value={user.location || "Not specified"}
+        />
+        <ReceiptLine
+          label="WEBSITE:"
+          value={
+            <a
+              href={profileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline flex items-center gap-1"
+            >
+              <LinkIcon className="w-3 h-3" />
+              {profileUrl}
+            </a>
+          }
         />
       </div>
 
