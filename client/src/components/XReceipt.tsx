@@ -7,6 +7,8 @@ import { useToast } from '../hooks/use-toast';
 import { ReceiptLayout, ReceiptHeader, ReceiptLine, ReceiptFooter } from './ReceiptLayout';
 import { fetchXUser } from '../lib/x';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
+import { Separator } from './ui/separator';
+import Barcode from 'react-barcode';
 
 type XReceiptProps = {
   username: string;
@@ -137,16 +139,29 @@ export function XReceipt({ username }: XReceiptProps) {
         date={format(new Date(), 'EEEE, MMMM dd, yyyy')}
       />
       
+      {/* Profile Section */}
       <div className="space-y-2">
         <ReceiptLine label="CUSTOMER:" value={user.name} />
         <ReceiptLine label="@USERNAME:" value={user.username} />
         <ReceiptLine label="BIO:" value={user.description || 'No bio'} />
         <ReceiptLine label="LOCATION:" value={user.location || 'Not specified'} />
+      </div>
+
+      <Separator className="my-4 border-dashed" />
+
+      {/* Stats Section */}
+      <div className="space-y-2">
         <ReceiptLine label="POSTS:" value={user.tweet_count.toLocaleString()} />
         <ReceiptLine label="FOLLOWERS:" value={user.followers_count.toLocaleString()} />
         <ReceiptLine label="FOLLOWING:" value={user.following_count.toLocaleString()} />
         <ReceiptLine label="LISTED:" value={user.listed_count?.toLocaleString() || '0'} />
         <ReceiptLine label="LIKES:" value={user.likes_count.toLocaleString()} />
+      </div>
+
+      <Separator className="my-4 border-dashed" />
+
+      {/* Account Info Section */}
+      <div className="space-y-2">
         <ReceiptLine label="VERIFIED:" value={user.verified ? 'Yes' : 'No'} verified={user.verified} />
         <ReceiptLine 
           label="MEMBER SINCE:" 
@@ -154,7 +169,22 @@ export function XReceipt({ username }: XReceiptProps) {
         />
       </div>
 
+      <Separator className="my-4 border-dashed" />
+
       <ReceiptFooter text="THANK YOU FOR POSTING!" />
+
+      {/* Barcode Section */}
+      <div className="mt-6 pt-4 border-t border-dashed">
+        <div className="flex justify-center">
+          <Barcode
+            value={`twitter.com/${user.username}`}
+            width={1.5}
+            height={50}
+            fontSize={12}
+            margin={0}
+          />
+        </div>
+      </div>
     </ReceiptLayout>
   );
 }
