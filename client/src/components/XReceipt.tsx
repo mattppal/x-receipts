@@ -110,7 +110,7 @@ export function XReceipt({ username }: XReceiptProps) {
       onDownload={handleDownload}
       onDownloadPDF={
         <PDFDownloadLink
-          document={<XReceiptPDF user={user} />}
+          document={<PDFReceipt>{/* Your receipt content */}</PDFReceipt>}
           fileName={`x-receipt-${username}.pdf`}
         >
           {({ loading }) =>
