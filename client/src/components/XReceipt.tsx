@@ -26,11 +26,6 @@ export function XReceipt({ username }: XReceiptProps) {
     () => fetchXUser(username),
   );
 
-  const { data: trendsData, error: trendsError } = useSWR(
-    "personalized-trends",
-    null, // Removed fetchPersonalizedTrends due to it not existing
-  );
-
   const { toast } = useToast();
 
   const handleDownload = useCallback(async () => {
@@ -145,6 +140,7 @@ export function XReceipt({ username }: XReceiptProps) {
 
   const orderNumber = `${username.toUpperCase()}-${Date.now().toString(36)}`;
   const accountAge = differenceInYears(new Date(), new Date(user.created_at));
+  const profileUrl = user.url || `https://x.com/${user.username}`;
 
   return (
     <ReceiptLayout
@@ -160,7 +156,6 @@ export function XReceipt({ username }: XReceiptProps) {
         orderNumber={orderNumber}
       />
 
-      {/* Profile Image */}
       {user.profile_image_url && (
         <div className="flex justify-center mb-6">
           <img
@@ -172,7 +167,6 @@ export function XReceipt({ username }: XReceiptProps) {
         </div>
       )}
 
-      {/* Profile Section */}
       <div className="space-y-2">
         <ReceiptLine label="CUSTOMER:" value={user.name} />
         <ReceiptLine label="@USERNAME:" value={user.username} />
@@ -185,7 +179,6 @@ export function XReceipt({ username }: XReceiptProps) {
 
       <Separator className="my-4 border-dashed" />
 
-      {/* Stats Section */}
       <div className="space-y-2">
         <ReceiptLine label="POSTS:" value={user.public_metrics.tweet_count.toLocaleString()} />
         <ReceiptLine
@@ -204,7 +197,6 @@ export function XReceipt({ username }: XReceiptProps) {
 
       <Separator className="my-4 border-dashed" />
 
-      {/* Account Info Section */}
       <div className="space-y-2">
         <ReceiptLine
           label="VERIFIED:"
@@ -217,7 +209,6 @@ export function XReceipt({ username }: XReceiptProps) {
         />
       </div>
 
-      {/* Add Pinned Tweet Section */}
       {user.pinned_tweet_id && user.pinned_tweet && (
         <>
           <Separator className="my-4 border-dashed" />
@@ -256,14 +247,23 @@ export function XReceipt({ username }: XReceiptProps) {
 
       <ReceiptFooter 
         text="THANK YOU FOR POSTING!"
-        url={user.url || `https://x.com/${user.username}`}
+        url={profileUrl}
+        footerLink={
+          <a
+            href={profileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-gray-500 hover:underline"
+          >
+            Visit Profile
+          </a>
+        }
       />
 
-      {/* QR Code Section */}
       <div className="mt-6 pt-4 border-t border-dashed">
         <div className="flex flex-col items-center justify-center gap-2">
           <QRCodeSVG
-            value={`https://x.com/${user.username}`}
+            value={profileUrl}
             size={128}
             level="L"
             includeMargin={false}
