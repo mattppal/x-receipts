@@ -25,7 +25,7 @@ function AccountAgeStamp({ years }: { years: number }) {
 }
 
 function VerificationStamp({ isVerified }: { isVerified: boolean }) {
-  if (isVerified) return null;
+  if (isVerified) return null; // Only show stamp when verified is true
 
   return (
     <div className="absolute top-16 left-8 transform rotate-12">
@@ -61,7 +61,8 @@ export function ReceiptLayout({
 
         const heightFactor = Math.min(contentHeight / 1000, 1);
         const dynamicBlur = baseBlur + (maxBlur - baseBlur) * heightFactor;
-        const dynamicSpread = baseSpread + (maxSpread - baseSpread) * heightFactor;
+        const dynamicSpread =
+          baseSpread + (maxSpread - baseSpread) * heightFactor;
 
         wrapperRef.current.style.filter = `drop-shadow(0 ${dynamicSpread}px ${dynamicBlur}px rgba(0, 0, 0, ${0.1 + heightFactor * 0.1}))`;
       }
@@ -167,7 +168,15 @@ export function ReceiptHeader({
 }) {
   return (
     <div className="text-center space-y-2">
-      <div className="text-xl font-bold tracking-wider">{title}</div>
+      <div className="text-xl font-bold tracking-wider flex items-center justify-center gap-2">
+        <svg width="24" height="24" viewBox="0 0 300 300" className="h-8 w-8" aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg">
+          <path
+            fill="currentColor"
+            d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"
+          />
+        </svg>
+        {title}
+      </div>
       <div className="text-sm text-gray-600">{date}</div>
       {orderNumber && (
         <div className="text-sm text-gray-500">ORDER #{orderNumber}</div>
