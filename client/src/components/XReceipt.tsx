@@ -14,19 +14,19 @@ import { fetchXUser, fetchPersonalizedTrends } from "../lib/x";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
-import { LinkIcon } from "./ui/icons"; // Assuming LinkIcon is imported from the correct path
+import { LinkIcon, TrendingUp } from "./ui/icons";
 
 type XReceiptProps = {
   username: string;
 };
 
 export function XReceipt({ username }: XReceiptProps) {
-  const { data: user, error } = useSWR(
+  const { data: user, error: userError } = useSWR(
     username ? `/x/users/${username}` : null,
     () => fetchXUser(username),
   );
 
-  const { data: trends } = useSWR(
+  const { data: trendsData, error: trendsError } = useSWR(
     'personalized-trends',
     fetchPersonalizedTrends
   );
@@ -126,13 +126,13 @@ export function XReceipt({ username }: XReceiptProps) {
     }
   }, [username, toast]);
 
-  if (error) {
+  if (userError) {
     return (
       <Alert variant="destructive">
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>
-          {error.details ||
-            error.message ||
+          {userError.details ||
+            userError.message ||
             "Failed to load user data. Please try again."}
         </AlertDescription>
       </Alert>
@@ -218,6 +218,29 @@ export function XReceipt({ username }: XReceiptProps) {
         />
       </div>
 
+      {/* Personalized Trends Section */}
+      {trendsData?.data && trendsData.data.length > 0 && (
+        <>
+          <Separator className="my-4 border-dashed" />
+          <div className="space-y-2">
+            <div className="text-center font-bold mb-2 flex items-center justify-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              TRENDING FOR YOU
+            </div>
+            {trendsData.data.map((trend, index) => (
+              <div key={index} className="text-sm mb-3 bg-gray-50 p-2 rounded">
+                <div className="text-xs text-gray-500 uppercase">{trend.category}</div>
+                <div className="font-bold">{trend.trend_name}</div>
+                <div className="text-xs text-gray-500 flex justify-between mt-1">
+                  <span>{trend.post_count}</span>
+                  <span>{trend.trending_since}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* Add Pinned Tweet Section */}
       {user.pinned_tweet_id && user.pinned_tweet && (
         <>
@@ -251,25 +274,6 @@ export function XReceipt({ username }: XReceiptProps) {
                 </a>
               </div>
             </div>
-          </div>
-        </>
-      )}
-
-      {/* Personalized Trends Section */}
-      {trends?.data && trends.data.length > 0 && (
-        <>
-          <Separator className="my-4 border-dashed" />
-          <div className="space-y-2">
-            <div className="text-center font-bold mb-2">TRENDING FOR YOU</div>
-            {trends.data.slice(0, 5).map((trend) => (
-              <div key={trend.trend_name} className="text-sm mb-2">
-                <div className="text-gray-600">{trend.category}</div>
-                <div className="font-bold">{trend.trend_name}</div>
-                <div className="text-gray-500 text-xs">
-                  {trend.post_count} • {trend.trending_since}
-                </div>
-              </div>
-            ))}
           </div>
         </>
       )}

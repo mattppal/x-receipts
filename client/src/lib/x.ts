@@ -80,7 +80,7 @@ export const trendSchema = z.object({
 
 export type Trend = z.infer<typeof trendSchema>;
 
-export async function fetchPersonalizedTrends(): Promise<Trend[]> {
+export async function fetchPersonalizedTrends(): Promise<{ data: Trend[] }> {
   const response = await fetch('/api/x/trends/personalized');
   
   if (!response.ok) {
@@ -89,5 +89,5 @@ export async function fetchPersonalizedTrends(): Promise<Trend[]> {
   }
   
   const data = await response.json();
-  return z.object({ data: z.array(trendSchema) }).parse(data).data;
+  return z.object({ data: z.array(trendSchema) }).parse(data);
 }
