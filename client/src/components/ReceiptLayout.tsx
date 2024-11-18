@@ -5,7 +5,7 @@ import { CheckCircle, Link as LinkIcon } from "lucide-react";
 type ReceiptLayoutProps = PropsWithChildren<{
   username?: string;
   onDownload?: () => void;
-  onDownloadPDF?: React.ReactNode; // Changed from () => void to ReactNode
+  onDownloadPDF?: () => void;
   onShare?: () => void;
   isVerified?: boolean;
   accountAge?: number;
