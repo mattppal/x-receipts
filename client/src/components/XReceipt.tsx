@@ -217,6 +217,26 @@ export function XReceipt({ username }: XReceiptProps) {
         />
       </div>
 
+      {/* Add Pinned Tweet Section */}
+      {user.pinned_tweet_id && (
+        <>
+          <Separator className="my-4 border-dashed" />
+          <div className="space-y-2">
+            <div className="text-center font-bold mb-2">📌 PINNED TWEET</div>
+            <div className="text-sm">
+              <a
+                href={`https://x.com/${user.username}/status/${user.pinned_tweet_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              >
+                View Pinned Tweet
+              </a>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Personalized Trends Section */}
       {trends?.data && trends.data.length > 0 && (
         <>
