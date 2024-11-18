@@ -12,13 +12,8 @@ export const xUserCache = pgTable("x_user_cache", {
   username: text("username").primaryKey(),
   data: jsonb("data").notNull(),
   cached_at: timestamp("cached_at").notNull().defaultNow(),
-});
-
-export const personalizedTrendsCache = pgTable("personalized_trends_cache", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  data: jsonb("data").notNull(),
-  cached_at: timestamp("cached_at").notNull().defaultNow(),
-  expires_at: timestamp("expires_at").notNull(),
+  trends_data: jsonb("trends_data"),
+  trends_cached_at: timestamp("trends_cached_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users);

@@ -24,22 +24,25 @@ export function registerRoutes(app: Express) {
         .from(xUserCache)
         .where(eq(xUserCache.username, req.params.username));
 
+      const now = Date.now();
       if (cachedData.length > 0) {
         const cache = cachedData[0];
-        const cacheAge = Date.now() - cache.cached_at.getTime();
+        const cacheAge = now - cache.cached_at.getTime();
+        const trendsAge = cache.trends_cached_at ? now - cache.trends_cached_at.getTime() : Infinity;
         
-        if (cacheAge < CACHE_DURATION_MS) {
-          // Return cached data if it's still valid
-          return res.json(cache.data);
+        // Return cached data if both user and trends data are valid
+        if (cacheAge < CACHE_DURATION_MS && trendsAge < TRENDS_CACHE_DURATION_MS) {
+          return res.json({
+            ...cache.data,
+            trends: cache.trends_data
+          });
         }
-        
-        // Delete expired cache
-        await db.delete(xUserCache)
-          .where(eq(xUserCache.username, req.params.username));
       }
 
       // Fetch fresh data from X API
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
+      
+      // Fetch user data
       const user = await client.v2.userByUsername(req.params.username, {
         'user.fields': [
           'public_metrics',
@@ -73,6 +76,22 @@ export function registerRoutes(app: Express) {
         } catch (error) {
           console.error('Failed to fetch pinned tweet:', error);
         }
+      }
+
+      // Fetch personalized trends
+      let trends;
+      try {
+        const trendsResponse = await client.v2.get('users/personalized_trends');
+        trends = {
+          data: trendsResponse.data.map((trend: any) => ({
+            category: trend.category || 'General',
+            post_count: trend.tweet_volume ? `${formatTweetCount(trend.tweet_volume)} posts` : 'N/A posts',
+            trend_name: trend.name,
+            trending_since: trend.trending_since || 'Trending now'
+          }))
+        };
+      } catch (error) {
+        console.error('Failed to fetch trends:', error);
       }
 
       // Enhanced user data with additional fields
@@ -109,18 +128,25 @@ export function registerRoutes(app: Express) {
         .values({
           username: req.params.username,
           data: userData,
-          cached_at: new Date()
+          cached_at: new Date(),
+          trends_data: trends,
+          trends_cached_at: trends ? new Date() : null
         })
         .onConflictDoUpdate({
           target: xUserCache.username,
           set: {
             data: userData,
-            cached_at: new Date()
+            cached_at: new Date(),
+            trends_data: trends,
+            trends_cached_at: trends ? new Date() : null
           }
         });
 
       res.set('Cache-Control', 'public, max-age=300');
-      res.json(userData);
+      res.json({
+        ...userData,
+        trends
+      });
     } catch (error: any) {
       console.error('X API error:', error);
       
