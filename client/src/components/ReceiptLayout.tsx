@@ -4,6 +4,15 @@ import { CheckCircle, Link as LinkIcon } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 
+// Add tenure color mapping
+const getTenureColor = (years: number): { border: string; text: string } => {
+  if (years < 1) return { border: "border-emerald-400", text: "text-emerald-400" };
+  if (years <= 3) return { border: "border-blue-400", text: "text-blue-400" };
+  if (years <= 8) return { border: "border-purple-500", text: "text-purple-500" };
+  if (years <= 15) return { border: "border-amber-500", text: "text-amber-500" };
+  return { border: "border-red-500", text: "text-red-500" };
+};
+
 type ReceiptLayoutProps = PropsWithChildren<{
   username: string;
   metrics?: {
@@ -16,10 +25,11 @@ type ReceiptLayoutProps = PropsWithChildren<{
 }>;
 
 function AccountAgeStamp({ years }: { years: number }) {
+  const colors = getTenureColor(years);
   return (
     <div className="absolute bottom-16 right-8 transform -rotate-12">
-      <div className="border-4 border-red-500 rounded-full w-24 h-24 flex items-center justify-center">
-        <div className="text-red-500 flex flex-col items-center">
+      <div className={`border-4 ${colors.border} rounded-full w-24 h-24 flex items-center justify-center`}>
+        <div className={`${colors.text} flex flex-col items-center`}>
           <span className="text-2xl font-bold">{years}</span>
           <span className="text-xs font-bold mt-1">YEARS</span>
         </div>
