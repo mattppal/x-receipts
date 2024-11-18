@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { useToast } from '../hooks/use-toast';
 import { ReceiptLayout, ReceiptHeader, ReceiptLine, ReceiptFooter } from './ReceiptLayout';
 import { fetchTwitterUser } from '../lib/twitter';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
 type TwitterReceiptProps = {
   username: string;
@@ -90,7 +91,14 @@ export function TwitterReceipt({ username }: TwitterReceiptProps) {
   }, [username, toast]);
 
   if (error) {
-    return <div className="text-center text-red-500">Failed to load user data</div>;
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          {error.details || error.message || 'Failed to load user data. Please try again.'}
+        </AlertDescription>
+      </Alert>
+    );
   }
 
   if (!user) {
