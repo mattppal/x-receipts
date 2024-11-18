@@ -9,11 +9,14 @@ type ReceiptLayoutProps = PropsWithChildren<{
 
 function TornEdge() {
   return (
-    <div className="w-full h-4 overflow-hidden">
-      <div className="w-full h-8" style={{
-        backgroundImage: `radial-gradient(circle at 50% 0%, transparent 8px, white 8px)`,
-        backgroundSize: '16px 16px',
-        backgroundPosition: '0 -8px',
+    <div className="w-full h-6 overflow-hidden relative">
+      <div className="w-full h-12 absolute" style={{
+        backgroundImage: `
+          radial-gradient(circle at 50% 0%, transparent 12px, white 12px),
+          radial-gradient(circle at 50% -5px, rgba(0,0,0,0.1) 12px, transparent 12px)
+        `,
+        backgroundSize: '24px 24px',
+        backgroundPosition: '0 -12px, 12px -12px',
         backgroundRepeat: 'repeat-x',
       }} />
     </div>
@@ -26,10 +29,19 @@ export function ReceiptLayout({ children, username }: ReceiptLayoutProps) {
       <div 
         className="relative bg-white max-w-md mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1" 
         style={{
-          backgroundImage: `repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 2px)`,
+          backgroundImage: `
+            repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 2px),
+            radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, transparent 100%)
+          `,
+          backgroundSize: 'auto, 100% 100%',
           filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
         }}
       >
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
+          backgroundSize: '200px 200px',
+          mixBlendMode: 'multiply'
+        }} />
         <TornEdge />
         <div className="p-8">
           <div className="space-y-6" id="receipt">
