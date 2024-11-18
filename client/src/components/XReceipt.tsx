@@ -159,6 +159,18 @@ export function XReceipt({ username }: XReceiptProps) {
         orderNumber={orderNumber}
       />
 
+      {/* Profile Image */}
+      {user.profile_image_url && (
+        <div className="flex justify-center mb-6">
+          <img
+            src={user.profile_image_url}
+            alt={`${user.name}'s profile`}
+            className="w-24 h-24 rounded-full border-4 border-gray-200"
+            crossOrigin="anonymous"
+          />
+        </div>
+      )}
+
       {/* Profile Section */}
       <div className="space-y-2">
         <ReceiptLine label="CUSTOMER:" value={user.name} />
@@ -205,19 +217,20 @@ export function XReceipt({ username }: XReceiptProps) {
         />
       </div>
 
-      <Separator className="my-4 border-dashed" />
-
-      {trends && trends.length > 0 && (
+      {/* Personalized Trends Section */}
+      {trends?.data && trends.data.length > 0 && (
         <>
           <Separator className="my-4 border-dashed" />
           <div className="space-y-2">
-            <div className="text-center font-bold">TRENDING FOR YOU</div>
-            {trends.slice(0, 5).map((trend) => (
-              <ReceiptLine
-                key={trend.name}
-                label={trend.name}
-                value={trend.tweet_volume ? `${trend.tweet_volume.toLocaleString()} tweets` : '-'}
-              />
+            <div className="text-center font-bold mb-2">TRENDING FOR YOU</div>
+            {trends.data.slice(0, 5).map((trend) => (
+              <div key={trend.trend_name} className="text-sm mb-2">
+                <div className="text-gray-600">{trend.category}</div>
+                <div className="font-bold">{trend.trend_name}</div>
+                <div className="text-gray-500 text-xs">
+                  {trend.post_count} • {trend.trending_since}
+                </div>
+              </div>
             ))}
           </div>
         </>
