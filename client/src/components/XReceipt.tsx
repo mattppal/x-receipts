@@ -14,40 +14,8 @@ import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
 import { Link as LinkIcon } from "lucide-react";
 
-// Importing pdfMake for PDF export
-import pdfMake from "pdfmake/build/pdfmake";
-import vfsFonts from "pdfmake/build/vfs_fonts";
-
 type XReceiptProps = {
   username: string;
-};
-
-// Function to generate and download the PDF
-const downloadPDF = (username, user) => {
-  const docDefinition = {
-    content: [
-      { text: `X Receipt for ${username}`, style: 'header' },
-      { text: `Name: ${user.name}`, style: 'subheader' },
-      { text: `Username: @${user.username}`, style: 'subheader' },
-      { text: `Bio: ${user.description || "No bio"}`, style: 'subheader' },
-      { text: `Location: ${user.location || "Not specified"}`, style: 'subheader' },
-      { text: `Website: ${user.entities?.url?.urls?.[0]?.expanded_url || user.url || `https://x.com/${user.username}`}`, style: 'subheader' },
-      // Add other user metrics if needed
-    ],
-    styles: {
-      header: {
-        fontSize: 22,
-        bold: true,
-        margin: [0, 20, 0, 10]
-      },
-      subheader: {
-        fontSize: 16,
-        margin: [0, 5, 0, 5]
-      },
-    }
-  };
-  pdfMake.vfs = vfsFonts.pdfMake.vfs;
-  pdfMake.createPdf(docDefinition).download(`${username}_XReceipt.pdf`);
 };
 
 export function XReceipt({ username }: XReceiptProps) {
@@ -82,12 +50,6 @@ export function XReceipt({ username }: XReceiptProps) {
     }
   }, [username, toast]);
 
-  const handleDownloadPDF = () => {
-    if (user) {
-      downloadPDF(username, user);
-    }
-  };
-
   if (userError) {
     return (
       <Alert variant="destructive">
@@ -108,6 +70,7 @@ export function XReceipt({ username }: XReceiptProps) {
   const orderNumber = `${username.toUpperCase()}-${Date.now().toString(36)}`;
   const accountAge = differenceInYears(new Date(), new Date(user.created_at));
   
+  // Safely extract URL from entities or fallback to default X profile URL
   const profileUrl = (() => {
     if (user.entities?.url?.urls?.[0]?.expanded_url) {
       return user.entities.url.urls[0].expanded_url;
@@ -122,7 +85,6 @@ export function XReceipt({ username }: XReceiptProps) {
     <ReceiptLayout
       username={username}
       onShare={handleShare}
-      onDownloadPDF={handleDownloadPDF}
       isVerified={user.verified}
       accountAge={accountAge}
     >

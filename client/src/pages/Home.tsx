@@ -1,48 +1,13 @@
 import { useState } from 'react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import { SearchForm } from '../components/SearchForm';
 import { XReceipt } from '../components/XReceipt';
-import { XReceiptPDF } from '../components/XReceiptPDF';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Share2, Download } from 'lucide-react';
-import { useToast } from '../hooks/use-toast';
-import useSWR from 'swr';
-import { fetchXUser } from '../lib/x';
 
 export default function Home() {
   const [username, setUsername] = useState<string>('');
-  const { toast } = useToast();
-  const { data: user } = useSWR(
-    username ? `/x/users/${username}` : null,
-    () => fetchXUser(username),
-  );
 
   const demoUsers = ['elonmusk', 'amasad', 'sama'];
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'X Receipt',
-          text: `Check out ${username}'s X receipt!`,
-          url: window.location.href,
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to share receipt",
-          variant: "destructive",
-        });
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Success",
-        description: "Link copied to clipboard",
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -86,33 +51,6 @@ export default function Home() {
         {username && (
           <div className="mt-8">
             <XReceipt username={username} />
-            {user && (
-              <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-sm rounded-full p-2 flex gap-2">
-                <Button
-                  onClick={handleShare}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
-                  variant="ghost"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-                <PDFDownloadLink
-                  document={<XReceiptPDF user={user} />}
-                  fileName={`x-receipt-${username}.pdf`}
-                >
-                  {({ loading }) => (
-                    <Button
-                      className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
-                      variant="ghost"
-                      disabled={loading}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      {loading ? 'Loading...' : 'Download PDF'}
-                    </Button>
-                  )}
-                </PDFDownloadLink>
-              </div>
-            )}
           </div>
         )}
       </div>
