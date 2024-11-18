@@ -70,7 +70,6 @@ export function XReceipt({ username }: XReceiptProps) {
   const orderNumber = `${username.toUpperCase()}-${Date.now().toString(36)}`;
   const accountAge = differenceInYears(new Date(), new Date(user.created_at));
   
-  // Safely extract URL from entities or fallback to default X profile URL
   const profileUrl = (() => {
     if (user.entities?.url?.urls?.[0]?.expanded_url) {
       return user.entities.url.urls[0].expanded_url;

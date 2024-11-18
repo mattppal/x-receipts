@@ -1,7 +1,6 @@
 import { PropsWithChildren, useEffect, useRef } from "react";
 import { Separator } from "./ui/separator";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
-import { Button } from "./ui/button";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 
@@ -12,7 +11,6 @@ type ReceiptLayoutProps = PropsWithChildren<{
     following: number;
     tweets: number;
   };
-  onShare?: () => void;
   isVerified?: boolean;
   accountAge?: number;
 }>;
@@ -48,7 +46,6 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
 export function ReceiptLayout({
   username,
   metrics,
-  onShare,
   isVerified,
   accountAge,
   children,
@@ -110,17 +107,6 @@ export function ReceiptLayout({
         <VerificationStamp isVerified={isVerified || false} />
         {accountAge !== undefined && <AccountAgeStamp years={accountAge} />}
       </div>
-      {onShare && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-sm rounded-full p-2 flex gap-2">
-          <Button
-            onClick={onShare}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
-            variant="ghost"
-          >
-            Share
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
