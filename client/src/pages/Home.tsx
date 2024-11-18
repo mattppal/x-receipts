@@ -14,10 +14,10 @@ export default function Home() {
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2 flex items-center justify-center gap-2">
-            <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 300 300" className="h-10 w-10" aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg">
               <path
                 fill="currentColor"
-                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66"
               />
             </svg>
             Receipt
