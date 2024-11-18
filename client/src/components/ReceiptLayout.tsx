@@ -7,7 +7,23 @@ type ReceiptLayoutProps = PropsWithChildren<{
   onDownload?: () => void;
   onDownloadPDF?: () => void;
   onShare?: () => void;
+  isVerified?: boolean;
 }>;
+
+function VerificationStamp({ isVerified }: { isVerified: boolean }) {
+  if (!isVerified) return null;
+  
+  return (
+    <div className="absolute top-24 right-8 transform rotate-12">
+      <div className="border-4 border-blue-500 rounded-full w-24 h-24 flex items-center justify-center">
+        <div className="text-blue-500 flex flex-col items-center">
+          <CheckCircle className="w-8 h-8" />
+          <span className="text-xs font-bold mt-1">VERIFIED</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function TornEdge() {
   return (
@@ -41,7 +57,7 @@ function TornEdge() {
   );
 }
 
-export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare }: ReceiptLayoutProps) {
+export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare, isVerified }: ReceiptLayoutProps) {
   return (
     <div className="flex justify-center items-center py-8">
       <div 
@@ -66,6 +82,7 @@ export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare }: 
             {children}
           </div>
         </div>
+        <VerificationStamp isVerified={isVerified || false} />
         <div className="rotate-180">
           <TornEdge />
         </div>

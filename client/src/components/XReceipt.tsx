@@ -133,6 +133,7 @@ export function XReceipt({ username }: XReceiptProps) {
       onDownload={handleDownload} 
       onDownloadPDF={handleDownloadPDF}
       onShare={handleShare}
+      isVerified={user.verified}
     >
       <ReceiptHeader 
         title="X RECEIPT"
