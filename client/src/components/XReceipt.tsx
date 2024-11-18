@@ -14,6 +14,7 @@ import { fetchXUser, fetchPersonalizedTrends } from "../lib/x";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
+import { LinkIcon } from "./ui/icons"; // Assuming LinkIcon is imported from the correct path
 
 type XReceiptProps = {
   username: string;
@@ -218,20 +219,37 @@ export function XReceipt({ username }: XReceiptProps) {
       </div>
 
       {/* Add Pinned Tweet Section */}
-      {user.pinned_tweet_id && (
+      {user.pinned_tweet_id && user.pinned_tweet && (
         <>
           <Separator className="my-4 border-dashed" />
           <div className="space-y-2">
             <div className="text-center font-bold mb-2">📌 PINNED TWEET</div>
-            <div className="text-sm">
-              <a
-                href={`https://x.com/${user.username}/status/${user.pinned_tweet_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-              >
-                View Pinned Tweet
-              </a>
+            <div className="border rounded p-3 bg-gray-50">
+              <div className="text-sm mb-2">{user.pinned_tweet.text}</div>
+              <div className="text-xs text-gray-500 flex items-center gap-4">
+                <span>{format(new Date(user.pinned_tweet.created_at), "MMM dd, yyyy")}</span>
+                <div className="flex gap-4">
+                  <span>🔄 {user.pinned_tweet.retweet_count || 0}</span>
+                  <span>💬 {user.pinned_tweet.reply_count || 0}</span>
+                  <span>❤️ {user.pinned_tweet.like_count || 0}</span>
+                </div>
+              </div>
+              {user.pinned_tweet.media && user.pinned_tweet.media.length > 0 && (
+                <div className="mt-2 text-xs text-gray-500">
+                  📷 {user.pinned_tweet.media.length} media attachment{user.pinned_tweet.media.length !== 1 ? 's' : ''}
+                </div>
+              )}
+              <div className="mt-2">
+                <a
+                  href={`https://x.com/${user.username}/status/${user.pinned_tweet_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                >
+                  <LinkIcon className="w-3 h-3" />
+                  View on X
+                </a>
+              </div>
             </div>
           </div>
         </>
