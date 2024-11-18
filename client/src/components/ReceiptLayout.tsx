@@ -1,6 +1,5 @@
 import { PropsWithChildren } from 'react';
 import { Separator } from './ui/separator';
-import Barcode from 'react-barcode';
 import { CheckCircle } from 'lucide-react';
 
 type ReceiptLayoutProps = PropsWithChildren<{
@@ -12,28 +11,41 @@ type ReceiptLayoutProps = PropsWithChildren<{
 
 function TornEdge() {
   return (
-    <div className="w-full h-8 overflow-hidden relative">
-      <div className="w-full h-16 absolute" style={{
-        backgroundImage: `
-          radial-gradient(circle at 50% 0%, transparent 15px, white 15px),
-          radial-gradient(circle at 50% -5px, rgba(0,0,0,0.1) 15px, transparent 15px),
-          radial-gradient(circle at 25% 0%, transparent 12px, white 12px),
-          radial-gradient(circle at 75% 0%, transparent 12px, white 12px),
-          linear-gradient(90deg, rgba(0,0,0,0.05) 0%, transparent 50%, rgba(0,0,0,0.05) 100%)
-        `,
-        backgroundSize: '30px 30px, 30px 30px, 30px 30px, 30px 30px, 100% 100%',
-        backgroundPosition: '0 -15px, 15px -15px, -7.5px -15px, 22.5px -15px, 0 0',
-        backgroundRepeat: 'repeat-x, repeat-x, repeat-x, repeat-x, no-repeat',
-      }} />
+    <div className="w-full h-6 relative overflow-hidden">
+      <div 
+        className="absolute inset-x-0 h-12" 
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 0 -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 15px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 30px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 45px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 60px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 75px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 90px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 105px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 120px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 135px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 150px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 165px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 180px -5px, transparent 6px, white 7px),
+            radial-gradient(circle at 195px -5px, transparent 6px, white 7px)
+          `,
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: '210px 12px',
+          backgroundPosition: 'center top',
+          filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.15))'
+        }}
+      />
     </div>
   );
 }
 
-export function ReceiptLayout({ children, username, onDownload, onDownloadPDF, onShare }: ReceiptLayoutProps) {
+export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare }: ReceiptLayoutProps) {
   return (
     <div className="flex justify-center items-center py-8">
       <div 
-        className="relative bg-white max-w-md mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1" 
+        className="relative bg-white max-w-md w-full mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1" 
         style={{
           backgroundImage: `
             repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 2px),
@@ -52,20 +64,6 @@ export function ReceiptLayout({ children, username, onDownload, onDownloadPDF, o
         <div className="p-8">
           <div className="space-y-6" id="receipt">
             {children}
-            
-            {username && (
-              <div className="mt-8 pt-4 border-t border-dashed text-center">
-                <div className="flex justify-center mt-4">
-                  <Barcode 
-                    value={`github.com/${username}`}
-                    width={1.5}
-                    height={50}
-                    fontSize={12}
-                    margin={0}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </div>
         <div className="rotate-180">
