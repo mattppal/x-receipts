@@ -2,7 +2,6 @@ import type { Express } from "express";
 import { TwitterApi } from 'twitter-api-v2';
 
 export function registerRoutes(app: Express) {
-  // Twitter API proxy route
   app.get('/api/twitter/users/:username', async (req, res) => {
     if (!process.env.TWITTER_BEARER_TOKEN) {
       return res.status(500).json({ 
@@ -36,26 +35,26 @@ export function registerRoutes(app: Express) {
       };
 
       res.json(userData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Twitter API error:', error);
+      
+      // Handle rate limit specifically
+      if (error.code === 429 || (error.errors && error.errors[0]?.code === 88)) {
+        const resetTime = error.rateLimit?.reset 
+          ? new Date(error.rateLimit.reset * 1000).toISOString()
+          : undefined;
+          
+        return res.status(429).json({ 
+          error: 'Twitter API rate limit exceeded',
+          details: `Please try again later${resetTime ? ` after ${resetTime}` : ''}`,
+          resetTime
+        });
+      }
+
       res.status(500).json({ 
         error: 'Failed to fetch Twitter data',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
-    }
-  });
-
-  // Keep the GitHub route for reference
-  app.get('/api/github/users/:username', async (req, res) => {
-    try {
-      const response = await fetch(`https://api.github.com/users/${req.params.username}`);
-      if (!response.ok) {
-        throw new Error('GitHub API request failed');
-      }
-      const data = await response.json();
-      res.json(data);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch GitHub data' });
     }
   });
 }

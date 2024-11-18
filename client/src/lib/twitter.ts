@@ -14,16 +14,41 @@ export const twitterUserSchema = z.object({
 
 export type TwitterUser = z.infer<typeof twitterUserSchema>;
 
-export async function fetchTwitterUser(username: string): Promise<TwitterUser> {
-  const response = await fetch(`/api/twitter/users/${username}`);
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw {
-      message: data.error || 'Failed to fetch Twitter user',
-      details: data.details || 'Unknown error occurred'
-    };
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export async function fetchTwitterUser(username: string, retryCount = 3): Promise<TwitterUser> {
+  try {
+    const response = await fetch(`/api/twitter/users/${username}`);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      // Handle rate limit with specific error
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('retry-after') || '60';
+        const resetTime = data.resetTime ? new Date(data.resetTime) : undefined;
+        
+        throw {
+          status: 429,
+          message: 'Rate limit exceeded',
+          details: `Please try again ${resetTime ? `after ${resetTime.toLocaleTimeString()}` : 'later'}`,
+          retryAfter: parseInt(retryAfter, 10)
+        };
+      }
+      
+      throw {
+        message: data.error || 'Failed to fetch Twitter user',
+        details: data.details || 'Unknown error occurred'
+      };
+    }
+    
+    return twitterUserSchema.parse(data);
+  } catch (error: any) {
+    if (error.status === 429 && retryCount > 0) {
+      // Wait for the specified time before retrying
+      const retryAfter = error.retryAfter || 60;
+      await delay(retryAfter * 1000);
+      return fetchTwitterUser(username, retryCount - 1);
+    }
+    throw error;
   }
-  
-  return twitterUserSchema.parse(data);
 }
