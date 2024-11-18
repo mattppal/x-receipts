@@ -14,7 +14,7 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
   if (isVerified) return null;
 
   return (
-    <div className="absolute top-24 right-8 transform rotate-12">
+    <div className="absolute top-16 left-8 transform rotate-12">
       <div className="border-4 border-blue-500 rounded-full w-24 h-24 flex items-center justify-center">
         <div className="text-blue-500 flex flex-col items-center">
           <CheckCircle className="w-8 h-8" />
@@ -28,8 +28,7 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
 function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  const tearSize = 12; // Slightly larger tears
-  const tearVariation = 2; // Amount of random variation
+  const tearSize = 16; // Slightly larger tears for better visibility
 
   useEffect(() => {
     if (containerRef.current) {
@@ -47,21 +46,14 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
   const tiles = Math.ceil(width / tearSize);
   const rawTiles = width / tearSize;
   const offset = ((tiles - rawTiles) * tearSize) / 2;
-  const margin = -(tearSize * 1.5) / 2;
-
-  // Generate random offsets for each tear
-  const randomOffsets = useMemo(() => {
-    return Array(tiles).fill(0).map(() => 
-      (Math.random() * tearVariation) - (tearVariation / 2)
-    );
-  }, [tiles]);
+  const margin = -(tearSize) / 2;
 
   return (
     <div
       ref={containerRef}
       className="relative w-full"
       style={{
-        height: tearSize * 1.5,
+        height: tearSize,
         marginTop: isUnder ? margin : 0,
         marginBottom: isUnder ? 0 : margin,
         display: "flex",
@@ -70,58 +62,32 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
         zIndex: 0,
       }}
     >
-      {/* Left end cap */}
-      <div
-        style={{
-          width: tearSize,
-          height: tearSize * 1.5,
-          backgroundColor: "white",
-          marginRight: -offset,
-          zIndex: 100,
-          borderRadius: isUnder ? "0 0 2px 2px" : "2px 2px 0 0",
-          boxShadow: isUnder ? "inset 0 1px 3px rgba(0,0,0,0.1)" : "inset 0 -1px 3px rgba(0,0,0,0.1)",
-        }}
-      />
-      
-      {/* Tear elements */}
-      {Array.from({ length: tiles }).map((_, i) => (
-        <div
-          key={`tear-${i}`}
-          style={{
-            width: tearSize,
-            height: tearSize,
-            backgroundColor: "white",
-            transform: `rotate(45deg) translateY(${randomOffsets[i]}px)`,
-            position: "relative",
-            zIndex: 1,
-            boxShadow: isUnder 
-              ? "inset -1px -1px 2px rgba(0,0,0,0.05)"
-              : "inset 1px 1px 2px rgba(0,0,0,0.05)",
-          }}
-        />
-      ))}
-      
-      {/* Right end cap */}
-      <div
-        style={{
-          width: tearSize,
-          height: tearSize * 1.5,
-          backgroundColor: "white",
-          marginLeft: -offset,
-          zIndex: 100,
-          borderRadius: isUnder ? "0 0 2px 2px" : "2px 2px 0 0",
-          boxShadow: isUnder ? "inset 0 1px 3px rgba(0,0,0,0.1)" : "inset 0 -1px 3px rgba(0,0,0,0.1)",
-        }}
-      />
-      
-      {/* Paper texture overlay */}
+      {/* Uniform triangular tears */}
+      <div className="flex w-full" style={{ marginLeft: -offset, marginRight: -offset }}>
+        {Array.from({ length: tiles }).map((_, i) => (
+          <div
+            key={`tear-${i}`}
+            style={{
+              width: tearSize,
+              height: tearSize,
+              backgroundColor: "white",
+              clipPath: isUnder
+                ? "polygon(50% 100%, 0 0, 100% 0)"
+                : "polygon(50% 0, 0 100%, 100% 100%)",
+              position: "relative",
+              zIndex: 1,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Subtle shadow overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
-          backgroundSize: "100px 100px",
-          opacity: 0.5,
-          mixBlendMode: "multiply",
+          background: isUnder
+            ? "linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, transparent 50%)"
+            : "linear-gradient(to top, rgba(0,0,0,0.02) 0%, transparent 50%)",
         }}
       />
     </div>
@@ -279,19 +245,18 @@ export function ReceiptHeader({
   );
 }
 
-export function ReceiptFooter({
-  text,
-  url,
-}: {
-  text: string;
-  url?: string;
-}) {
+export function ReceiptFooter({ text, url }: { text: string; url?: string }) {
   return (
     <div className="text-center mt-6 pt-6 border-t border-dashed space-y-4">
       {url && (
         <div className="text-sm space-y-1 text-gray-600 flex items-center justify-center gap-1">
           <LinkIcon className="w-4 h-4" />
-          <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
             {url}
           </a>
         </div>
