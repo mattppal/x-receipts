@@ -26,14 +26,13 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
 }
 
 function TornEdge() {
-  // Generate random tear positions for more natural look
   const generateTearPoints = () => {
     const points = [];
-    const numPoints = 24; // Increased number of points for more detail
-    const baseHeight = 8;
+    const numPoints = 20; // Changed from 24 to 20
+    const baseHeight = 6; // Changed from 8 to 6
 
     for (let i = 0; i < numPoints; i++) {
-      const randomHeight = baseHeight + Math.random() * 4;
+      const randomHeight = baseHeight + Math.random() * 3; // Adjusted height randomization
       points.push(randomHeight);
     }
     return points;
@@ -43,32 +42,26 @@ function TornEdge() {
   const gradients = tearPoints
     .map((height, i) => {
       const position = (i * (100 / (tearPoints.length - 1))).toFixed(1);
-      return `radial-gradient(circle at ${position}% -5px, transparent ${height - 2}px, white ${height}px)`;
+      return `radial-gradient(circle at ${position}% 0%, transparent ${height}px, white ${height + 0.5}px)`; // Adjusted gradient calculation
     })
     .join(",");
 
   return (
-    <div className="w-full h-8 relative overflow-hidden">
+    <div className="relative w-full h-4 overflow-hidden">
       <div
-        className="absolute inset-x-0 h-16"
+        className="absolute inset-x-0 top-0 h-8"
         style={{
-          backgroundImage: `
-            ${gradients},
-            repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 3px)
-          `,
-          backgroundRepeat: "no-repeat, repeat-x",
-          backgroundSize: "100% 16px, 6px 16px",
-          backgroundPosition: "center top",
-          filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.15))",
-          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
+          background: gradients,
+          backgroundSize: "100% 100%",
+          filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.1))",
         }}
       />
       <div
-        className="absolute inset-x-0 h-16 opacity-10"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.3'/%3E%3C/svg%3E")`,
-          backgroundSize: "100px 100px",
-          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
+          backgroundSize: "50px 50px",
+          opacity: 0.3,
         }}
       />
     </div>
