@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useRef } from "react";
+import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import { Separator } from "./ui/separator";
 import { CheckCircle } from "lucide-react";
 
@@ -25,43 +25,79 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
   );
 }
 
-function TornEdge() {
-  const generateTearPoints = () => {
-    const points = [];
-    const numPoints = 20; // Changed from 24 to 20
-    const baseHeight = 6; // Changed from 8 to 6
+function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const tearSize = 10;
 
-    for (let i = 0; i < numPoints; i++) {
-      const randomHeight = baseHeight + Math.random() * 3; // Adjusted height randomization
-      points.push(randomHeight);
+  useEffect(() => {
+    if (containerRef.current) {
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          setWidth(entry.contentRect.width);
+        }
+      });
+
+      resizeObserver.observe(containerRef.current);
+      return () => resizeObserver.disconnect();
     }
-    return points;
-  };
+  }, []);
 
-  const tearPoints = generateTearPoints();
-  const gradients = tearPoints
-    .map((height, i) => {
-      const position = (i * (100 / (tearPoints.length - 1))).toFixed(1);
-      return `radial-gradient(circle at ${position}% 0%, transparent ${height}px, white ${height + 0.5}px)`; // Adjusted gradient calculation
-    })
-    .join(",");
+  const tiles = Math.ceil(width / tearSize);
+  const rawTiles = width / tearSize;
+  const offset = ((tiles - rawTiles) * tearSize) / 2;
+  const margin = -(tearSize * 1.5) / 2;
 
   return (
-    <div className="relative w-full h-4 overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative w-full"
+      style={{
+        height: tearSize * 1.5,
+        marginTop: isUnder ? margin : 0,
+        marginBottom: isUnder ? 0 : margin,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        zIndex: 0,
+      }}
+    >
       <div
-        className="absolute inset-x-0 top-0 h-8"
         style={{
-          background: gradients,
-          backgroundSize: "100% 100%",
-          filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.1))",
+          width: tearSize,
+          height: tearSize * 1.5,
+          backgroundColor: 'white',
+          marginRight: -offset,
+          zIndex: 100,
+        }}
+      />
+      {Array.from({ length: tiles }).map((_, i) => (
+        <div
+          key={`tear-${i}`}
+          style={{
+            width: tearSize,
+            height: tearSize,
+            backgroundColor: 'white',
+            transform: 'rotate(45deg)',
+          }}
+        />
+      ))}
+      <div
+        style={{
+          width: tearSize,
+          height: tearSize * 1.5,
+          backgroundColor: 'white',
+          marginLeft: -offset,
+          zIndex: 100,
         }}
       />
       <div
         className="absolute inset-0"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
-          backgroundSize: "50px 50px",
+          backgroundSize: '50px 50px',
           opacity: 0.3,
+          pointerEvents: 'none',
         }}
       />
     </div>
