@@ -1,6 +1,6 @@
-import { PropsWithChildren } from 'react';
-import { Separator } from './ui/separator';
-import { CheckCircle } from 'lucide-react';
+import { PropsWithChildren } from "react";
+import { Separator } from "./ui/separator";
+import { CheckCircle } from "lucide-react";
 
 type ReceiptLayoutProps = PropsWithChildren<{
   username?: string;
@@ -11,8 +11,8 @@ type ReceiptLayoutProps = PropsWithChildren<{
 }>;
 
 function VerificationStamp({ isVerified }: { isVerified: boolean }) {
-  if (!isVerified) return null;
-  
+  if (isVerified) return null;
+
   return (
     <div className="absolute top-24 right-8 transform rotate-12">
       <div className="border-4 border-blue-500 rounded-full w-24 h-24 flex items-center justify-center">
@@ -31,7 +31,7 @@ function TornEdge() {
     const points = [];
     const numPoints = 24; // Increased number of points for more detail
     const baseHeight = 8;
-    
+
     for (let i = 0; i < numPoints; i++) {
       const randomHeight = baseHeight + Math.random() * 4;
       points.push(randomHeight);
@@ -40,58 +40,69 @@ function TornEdge() {
   };
 
   const tearPoints = generateTearPoints();
-  const gradients = tearPoints.map((height, i) => {
-    const position = (i * (100 / (tearPoints.length - 1))).toFixed(1);
-    return `radial-gradient(circle at ${position}% -5px, transparent ${height-2}px, white ${height}px)`;
-  }).join(',');
+  const gradients = tearPoints
+    .map((height, i) => {
+      const position = (i * (100 / (tearPoints.length - 1))).toFixed(1);
+      return `radial-gradient(circle at ${position}% -5px, transparent ${height - 2}px, white ${height}px)`;
+    })
+    .join(",");
 
   return (
     <div className="w-full h-8 relative overflow-hidden">
-      <div 
-        className="absolute inset-x-0 h-16" 
+      <div
+        className="absolute inset-x-0 h-16"
         style={{
           backgroundImage: `
             ${gradients},
             repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 3px)
           `,
-          backgroundRepeat: 'no-repeat, repeat-x',
-          backgroundSize: '100% 16px, 6px 16px',
-          backgroundPosition: 'center top',
-          filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.15))',
-          maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
+          backgroundRepeat: "no-repeat, repeat-x",
+          backgroundSize: "100% 16px, 6px 16px",
+          backgroundPosition: "center top",
+          filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.15))",
+          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
         }}
       />
-      <div 
-        className="absolute inset-x-0 h-16 opacity-10" 
+      <div
+        className="absolute inset-x-0 h-16 opacity-10"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.3'/%3E%3C/svg%3E")`,
-          backgroundSize: '100px 100px',
-          maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
+          backgroundSize: "100px 100px",
+          maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)",
         }}
       />
     </div>
   );
 }
 
-export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare, isVerified }: ReceiptLayoutProps) {
+export function ReceiptLayout({
+  children,
+  onDownload,
+  onDownloadPDF,
+  onShare,
+  isVerified,
+}: ReceiptLayoutProps) {
   return (
     <div className="flex justify-center items-center py-8">
-      <div 
-        className="relative bg-white max-w-md w-full mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1" 
+      <div
+        className="relative bg-white max-w-md w-full mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1"
         style={{
           backgroundImage: `
             repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 2px),
             radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, transparent 100%)
           `,
-          backgroundSize: 'auto, 100% 100%',
-          filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+          backgroundSize: "auto, 100% 100%",
+          filter: "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))",
         }}
       >
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
-          backgroundSize: '200px 200px',
-          mixBlendMode: 'multiply'
-        }} />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
+            backgroundSize: "200px 200px",
+            mixBlendMode: "multiply",
+          }}
+        />
         <TornEdge />
         <div className="p-8">
           <div className="space-y-6" id="receipt">
@@ -135,7 +146,15 @@ export function ReceiptLayout({ children, onDownload, onDownloadPDF, onShare, is
   );
 }
 
-export function ReceiptLine({ label, value, verified }: { label: string; value: string | number; verified?: boolean }) {
+export function ReceiptLine({
+  label,
+  value,
+  verified,
+}: {
+  label: string;
+  value: string | number;
+  verified?: boolean;
+}) {
   return (
     <div className="flex justify-between items-start">
       <span className="flex-shrink-0 text-gray-600">{label}</span>
@@ -149,18 +168,34 @@ export function ReceiptLine({ label, value, verified }: { label: string; value: 
   );
 }
 
-export function ReceiptHeader({ title, date, orderNumber }: { title: string; date: string; orderNumber?: string }) {
+export function ReceiptHeader({
+  title,
+  date,
+  orderNumber,
+}: {
+  title: string;
+  date: string;
+  orderNumber?: string;
+}) {
   return (
     <div className="text-center space-y-2">
       <div className="text-xl font-bold tracking-wider">{title}</div>
       <div className="text-sm text-gray-600">{date}</div>
-      {orderNumber && <div className="text-sm text-gray-500">ORDER #{orderNumber}</div>}
+      {orderNumber && (
+        <div className="text-sm text-gray-500">ORDER #{orderNumber}</div>
+      )}
       <Separator className="my-6" />
     </div>
   );
 }
 
-export function ReceiptFooter({ text, cardInfo }: { text: string; cardInfo?: { cardNumber: string; authCode: string; cardHolder: string } }) {
+export function ReceiptFooter({
+  text,
+  cardInfo,
+}: {
+  text: string;
+  cardInfo?: { cardNumber: string; authCode: string; cardHolder: string };
+}) {
   return (
     <div className="text-center mt-6 pt-6 border-t border-dashed space-y-4">
       {cardInfo && (
