@@ -1,6 +1,6 @@
 import { PropsWithChildren, useEffect, useRef, useState } from "react";
 import { Separator } from "./ui/separator";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Link as LinkIcon } from "lucide-react";
 
 type ReceiptLayoutProps = PropsWithChildren<{
   username?: string;
@@ -56,9 +56,9 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
         height: tearSize * 1.5,
         marginTop: isUnder ? margin : 0,
         marginBottom: isUnder ? 0 : margin,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
         zIndex: 0,
       }}
     >
@@ -66,7 +66,7 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
         style={{
           width: tearSize,
           height: tearSize * 1.5,
-          backgroundColor: 'white',
+          backgroundColor: "white",
           marginRight: -offset,
           zIndex: 100,
         }}
@@ -77,8 +77,8 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
           style={{
             width: tearSize,
             height: tearSize,
-            backgroundColor: 'white',
-            transform: 'rotate(45deg)',
+            backgroundColor: "white",
+            transform: "rotate(45deg)",
           }}
         />
       ))}
@@ -86,7 +86,7 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
         style={{
           width: tearSize,
           height: tearSize * 1.5,
-          backgroundColor: 'white',
+          backgroundColor: "white",
           marginLeft: -offset,
           zIndex: 100,
         }}
@@ -95,9 +95,9 @@ function TornEdge({ isUnder = false }: { isUnder?: boolean }) {
         className="absolute inset-0"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")`,
-          backgroundSize: '50px 50px',
+          backgroundSize: "50px 50px",
           opacity: 0.3,
-          pointerEvents: 'none',
+          pointerEvents: "none",
         }}
       />
     </div>
@@ -122,12 +122,13 @@ export function ReceiptLayout({
         const maxBlur = 24;
         const baseSpread = 4;
         const maxSpread = 12;
-        
+
         // Calculate dynamic shadow values based on content height
         const heightFactor = Math.min(contentHeight / 1000, 1); // Normalize height
         const dynamicBlur = baseBlur + (maxBlur - baseBlur) * heightFactor;
-        const dynamicSpread = baseSpread + (maxSpread - baseSpread) * heightFactor;
-        
+        const dynamicSpread =
+          baseSpread + (maxSpread - baseSpread) * heightFactor;
+
         // Update the shadow style
         wrapperRef.current.style.filter = `drop-shadow(0 ${dynamicSpread}px ${dynamicBlur}px rgba(0, 0, 0, ${0.1 + heightFactor * 0.1}))`;
       }
@@ -168,7 +169,7 @@ export function ReceiptLayout({
             mixBlendMode: "multiply",
           }}
         />
-        <TornEdge />
+        <TornEdge isUnder={true} />
         <div className="p-8">
           <div ref={contentRef} className="space-y-6" id="receipt">
             {children}
@@ -256,18 +257,19 @@ export function ReceiptHeader({
 
 export function ReceiptFooter({
   text,
-  cardInfo,
+  url,
 }: {
   text: string;
-  cardInfo?: { cardNumber: string; authCode: string; cardHolder: string };
+  url?: string;
 }) {
   return (
     <div className="text-center mt-6 pt-6 border-t border-dashed space-y-4">
-      {cardInfo && (
-        <div className="text-sm space-y-1 text-gray-600">
-          <div>CARD #: {cardInfo.cardNumber}</div>
-          <div>AUTH CODE: {cardInfo.authCode}</div>
-          <div>CARDHOLDER: {cardInfo.cardHolder}</div>
+      {url && (
+        <div className="text-sm space-y-1 text-gray-600 flex items-center justify-center gap-1">
+          <LinkIcon className="w-4 h-4" />
+          <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+            {url}
+          </a>
         </div>
       )}
       <div className="text-sm font-bold tracking-wider">{text}</div>

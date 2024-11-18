@@ -137,6 +137,9 @@ export function XReceipt({ username }: XReceiptProps) {
     return <div className="text-center">Loading...</div>;
   }
 
+  // Generate a unique order number based on username and current timestamp
+  const orderNumber = `${username.toUpperCase()}-${Date.now().toString(36)}`;
+
   return (
     <ReceiptLayout
       onDownload={handleDownload}
@@ -147,6 +150,7 @@ export function XReceipt({ username }: XReceiptProps) {
       <ReceiptHeader
         title="X RECEIPT"
         date={format(new Date(), "EEEE, MMMM dd, yyyy")}
+        orderNumber={orderNumber}
       />
 
       {/* Profile Section */}
@@ -197,7 +201,10 @@ export function XReceipt({ username }: XReceiptProps) {
 
       <Separator className="my-4 border-dashed" />
 
-      <ReceiptFooter text="THANK YOU FOR POSTING!" />
+      <ReceiptFooter 
+        text="THANK YOU FOR POSTING!"
+        url={user.url || `https://x.com/${user.username}`}
+      />
 
       {/* QR Code Section */}
       <div className="mt-6 pt-4 border-t border-dashed">
