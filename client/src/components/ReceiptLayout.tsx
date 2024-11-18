@@ -1,5 +1,4 @@
 import { PropsWithChildren, useEffect, useRef } from "react";
-import { Separator } from "./ui/separator";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
@@ -49,6 +48,20 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
           <span className="text-xs font-bold mt-1">VERIFIED</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReceiptSeparator() {
+  return (
+    <div className="my-6 flex items-center">
+      <div className="flex-1 border-t border-dotted border-gray-300"></div>
+      <div className="mx-2">
+        <svg width="6" height="6" viewBox="0 0 6 6" className="text-gray-300">
+          <circle cx="3" cy="3" r="1.5" fill="currentColor" />
+        </svg>
+      </div>
+      <div className="flex-1 border-t border-dotted border-gray-300"></div>
     </div>
   );
 }
@@ -174,7 +187,7 @@ export function ReceiptHeader({
       {orderNumber && (
         <div className="text-sm text-gray-500">ORDER #{orderNumber}</div>
       )}
-      <Separator className="my-6" />
+      <ReceiptSeparator />
     </div>
   );
 }
@@ -189,7 +202,8 @@ export function ReceiptFooter({
   footerLink?: React.ReactNode;
 }) {
   return (
-    <div className="text-center mt-6 pt-6 border-t border-dashed space-y-4">
+    <div className="text-center mt-6 pt-6 space-y-4">
+      <ReceiptSeparator />
       {url && (
         <div className="text-sm space-y-1 text-gray-600 flex items-center justify-center gap-1">
           <LinkIcon className="w-4 h-4" />
