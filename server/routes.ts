@@ -138,7 +138,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // New personalized trends endpoint
+  // Updated personalized trends endpoint
   app.get('/api/x/trends/personalized', async (req, res) => {
     if (!process.env.X_BEARER_TOKEN) {
       return res.status(500).json({ 
@@ -151,7 +151,15 @@ export function registerRoutes(app: Express) {
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
       const trends = await client.v2.get('users/personalized_trends');
       
-      res.json(trends.data);
+      // Transform the response to match the required format
+      const formattedTrends = trends.data.map((trend: any) => ({
+        category: trend.category || 'General',
+        post_count: trend.tweet_volume ? `${formatTweetCount(trend.tweet_volume)} posts` : 'N/A posts',
+        trend_name: trend.name,
+        trending_since: trend.trending_since || 'Trending now'
+      }));
+      
+      res.json({ data: formattedTrends });
     } catch (error: any) {
       console.error('X API error:', error);
       
@@ -168,4 +176,15 @@ export function registerRoutes(app: Express) {
       });
     }
   });
+}
+
+// Helper function to format tweet counts
+function formatTweetCount(count: number): string {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`;
+  }
+  return count.toString();
 }

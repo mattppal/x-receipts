@@ -28,7 +28,7 @@ export async function fetchXUser(username: string, retryCount = 3): Promise<XUse
     const response = await fetch(`/api/x/users/${username}`, {
       headers: {
         'Accept': 'application/json',
-        'Cache-Control': 'no-cache'  // Bypass browser cache for fresh data
+        'Cache-Control': 'no-cache'
       }
     });
     const data = await response.json();
@@ -72,11 +72,10 @@ export async function fetchXUser(username: string, retryCount = 3): Promise<XUse
 }
 
 export const trendSchema = z.object({
-  name: z.string(),
-  url: z.string(),
-  promoted_content: z.string().nullable(),
-  query: z.string(),
-  tweet_volume: z.number().nullable()
+  category: z.string(),
+  post_count: z.string(),
+  trend_name: z.string(),
+  trending_since: z.string()
 });
 
 export type Trend = z.infer<typeof trendSchema>;
@@ -90,5 +89,5 @@ export async function fetchPersonalizedTrends(): Promise<Trend[]> {
   }
   
   const data = await response.json();
-  return z.array(trendSchema).parse(data);
+  return z.object({ data: z.array(trendSchema) }).parse(data).data;
 }
