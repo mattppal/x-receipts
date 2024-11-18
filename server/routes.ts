@@ -1,5 +1,10 @@
 import type { Express } from "express";
 import { TwitterApi } from 'twitter-api-v2';
+import { db } from '../db';
+import { xUserCache } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export function registerRoutes(app: Express) {
   app.get('/api/x/users/:username', async (req, res) => {
@@ -11,6 +16,26 @@ export function registerRoutes(app: Express) {
     }
 
     try {
+      // Check cache first
+      const cachedData = await db.select()
+        .from(xUserCache)
+        .where(eq(xUserCache.username, req.params.username));
+
+      if (cachedData.length > 0) {
+        const cache = cachedData[0];
+        const cacheAge = Date.now() - cache.cached_at.getTime();
+        
+        if (cacheAge < CACHE_DURATION_MS) {
+          // Return cached data if it's still valid
+          return res.json(cache.data);
+        }
+        
+        // Delete expired cache
+        await db.delete(xUserCache)
+          .where(eq(xUserCache.username, req.params.username));
+      }
+
+      // Fetch fresh data from X API
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
       const user = await client.v2.userByUsername(req.params.username, {
         'user.fields': [
@@ -44,7 +69,7 @@ export function registerRoutes(app: Express) {
         listed_count: user.data.public_metrics?.listed_count ?? 0,
         likes_count: user.data.public_metrics?.like_count ?? 0,
         created_at: user.data.created_at,
-        profile_image_url: user.data.profile_image_url?.replace('_normal', ''), // Get full-size image
+        profile_image_url: user.data.profile_image_url?.replace('_normal', ''),
         description: user.data.description,
         location: user.data.location,
         verified: user.data.verified ?? false,
@@ -54,8 +79,22 @@ export function registerRoutes(app: Express) {
         pinned_tweet_id: user.data.pinned_tweet_id
       };
 
-      // Set cache control headers
-      res.set('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+      // Store in cache
+      await db.insert(xUserCache)
+        .values({
+          username: req.params.username,
+          data: userData,
+          cached_at: new Date()
+        })
+        .onConflictDoUpdate({
+          target: xUserCache.username,
+          set: {
+            data: userData,
+            cached_at: new Date()
+          }
+        });
+
+      res.set('Cache-Control', 'public, max-age=300');
       res.json(userData);
     } catch (error: any) {
       console.error('X API error:', error);
@@ -65,7 +104,6 @@ export function registerRoutes(app: Express) {
           ? new Date(error.rateLimit.reset * 1000).toISOString()
           : undefined;
         
-        // Set Retry-After header if available
         if (error.rateLimit?.reset) {
           const retryAfter = Math.max(1, Math.ceil((error.rateLimit.reset * 1000 - Date.now()) / 1000));
           res.set('Retry-After', retryAfter.toString());
@@ -78,7 +116,6 @@ export function registerRoutes(app: Express) {
         });
       }
 
-      // Handle other specific error codes
       if (error.code === 401) {
         return res.status(401).json({
           error: 'Authentication error',
