@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { useToast } from '../hooks/use-toast';
 
 type ExportButtonsProps = {
@@ -11,19 +10,55 @@ export function ExportButtons({ username }: ExportButtonsProps) {
   const { toast } = useToast();
 
   const handleDownload = useCallback(async () => {
-    const receipt = document.getElementById('receipt');
+    const receipt = document.getElementById('receipt')?.parentElement?.parentElement;
     if (receipt) {
       try {
-        const canvas = await html2canvas(receipt, {
-          backgroundColor: '#ffffff',
-          scale: 2,
-          useCORS: true,
+        // Create a wrapper to maintain padding during capture
+        const wrapper = document.createElement('div');
+        wrapper.style.padding = '32px';
+        wrapper.style.background = 'transparent';
+        wrapper.appendChild(receipt.cloneNode(true));
+        document.body.appendChild(wrapper);
+
+        const canvas = await html2canvas(wrapper, {
+          backgroundColor: null,
+          scale: 3, // Higher resolution
           logging: false,
+          allowTaint: true,
+          useCORS: true,
+          onclone: (doc) => {
+            const receiptClone = doc.querySelector('#receipt')?.parentElement?.parentElement;
+            if (receiptClone) {
+              // Ensure styles are properly applied for capture
+              receiptClone.style.transform = 'rotate(1deg)';
+              receiptClone.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.15)';
+            }
+          }
         });
+
+        // Clean up the temporary wrapper
+        document.body.removeChild(wrapper);
+        
+        // Create a new canvas with padding
+        const paddedCanvas = document.createElement('canvas');
+        const ctx = paddedCanvas.getContext('2d');
+        if (!ctx) return;
+
+        // Add padding around the image
+        const padding = 60;
+        paddedCanvas.width = canvas.width + (padding * 2);
+        paddedCanvas.height = canvas.height + (padding * 2);
+        
+        // Fill with white background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height);
+        
+        // Draw the original canvas in the center
+        ctx.drawImage(canvas, padding, padding);
         
         const link = document.createElement('a');
         link.download = `x-receipt-${username}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = paddedCanvas.toDataURL('image/png');
         link.click();
       } catch (err) {
         toast({
