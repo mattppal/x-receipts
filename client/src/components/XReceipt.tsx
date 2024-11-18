@@ -10,7 +10,7 @@ import {
   ReceiptLine,
   ReceiptFooter,
 } from "./ReceiptLayout";
-import { fetchXUser } from "../lib/x";
+import { fetchXUser, fetchPersonalizedTrends } from "../lib/x";
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
@@ -23,6 +23,11 @@ export function XReceipt({ username }: XReceiptProps) {
   const { data: user, error } = useSWR(
     username ? `/x/users/${username}` : null,
     () => fetchXUser(username),
+  );
+
+  const { data: trends } = useSWR(
+    'personalized-trends',
+    fetchPersonalizedTrends
   );
 
   const { toast } = useToast();
@@ -201,6 +206,22 @@ export function XReceipt({ username }: XReceiptProps) {
       </div>
 
       <Separator className="my-4 border-dashed" />
+
+      {trends && trends.length > 0 && (
+        <>
+          <Separator className="my-4 border-dashed" />
+          <div className="space-y-2">
+            <div className="text-center font-bold">TRENDING FOR YOU</div>
+            {trends.slice(0, 5).map((trend) => (
+              <ReceiptLine
+                key={trend.name}
+                label={trend.name}
+                value={trend.tweet_volume ? `${trend.tweet_volume.toLocaleString()} tweets` : '-'}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       <ReceiptFooter 
         text="THANK YOU FOR POSTING!"

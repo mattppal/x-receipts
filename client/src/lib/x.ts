@@ -70,3 +70,25 @@ export async function fetchXUser(username: string, retryCount = 3): Promise<XUse
     throw error;
   }
 }
+
+export const trendSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  promoted_content: z.string().nullable(),
+  query: z.string(),
+  tweet_volume: z.number().nullable()
+});
+
+export type Trend = z.infer<typeof trendSchema>;
+
+export async function fetchPersonalizedTrends(): Promise<Trend[]> {
+  const response = await fetch('/api/x/trends/personalized');
+  
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.details || 'Failed to fetch personalized trends');
+  }
+  
+  const data = await response.json();
+  return z.array(trendSchema).parse(data);
+}

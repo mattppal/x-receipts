@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export function registerRoutes(app: Express) {
+  // Existing user endpoint
   app.get('/api/x/users/:username', async (req, res) => {
     if (!process.env.X_BEARER_TOKEN) {
       return res.status(500).json({ 
@@ -132,6 +133,37 @@ export function registerRoutes(app: Express) {
 
       res.status(500).json({ 
         error: 'Failed to fetch X data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // New personalized trends endpoint
+  app.get('/api/x/trends/personalized', async (req, res) => {
+    if (!process.env.X_BEARER_TOKEN) {
+      return res.status(500).json({ 
+        error: 'X API token not configured',
+        details: 'Missing X_BEARER_TOKEN environment variable'
+      });
+    }
+
+    try {
+      const client = new TwitterApi(process.env.X_BEARER_TOKEN);
+      const trends = await client.v2.get('users/personalized_trends');
+      
+      res.json(trends.data);
+    } catch (error: any) {
+      console.error('X API error:', error);
+      
+      if (error.code === 429) {
+        return res.status(429).json({ 
+          error: 'X API rate limit exceeded',
+          details: 'Please try again later'
+        });
+      }
+
+      res.status(500).json({ 
+        error: 'Failed to fetch personalized trends',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
