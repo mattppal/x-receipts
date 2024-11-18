@@ -13,7 +13,15 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-2">X Receipt</h1>
+          <h1 className="text-4xl font-bold mb-2 flex items-center justify-center gap-2">
+            <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              />
+            </svg>
+            Receipt
+          </h1>
           <p className="text-gray-600">
             Generate a receipt-style summary of your X profile
           </p>
