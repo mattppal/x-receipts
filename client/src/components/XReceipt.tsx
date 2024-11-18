@@ -3,6 +3,7 @@ import useSWR from "swr";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { format, differenceInYears } from "date-fns";
+import { fetchXUser } from "../lib/x"; // Add this import
 import { useToast } from "../hooks/use-toast";
 import {
   ReceiptLayout,
