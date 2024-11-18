@@ -8,7 +8,7 @@ import { ReceiptLayout, ReceiptHeader, ReceiptLine, ReceiptFooter } from './Rece
 import { fetchXUser } from '../lib/x';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import { Separator } from './ui/separator';
-import Barcode from 'react-barcode';
+import { QRCodeSVG } from 'qrcode.react';
 
 type XReceiptProps = {
   username: string;
@@ -173,16 +173,16 @@ export function XReceipt({ username }: XReceiptProps) {
 
       <ReceiptFooter text="THANK YOU FOR POSTING!" />
 
-      {/* Barcode Section */}
+      {/* QR Code Section */}
       <div className="mt-6 pt-4 border-t border-dashed">
-        <div className="flex justify-center">
-          <Barcode
-            value={`twitter.com/${user.username}`}
-            width={1.5}
-            height={50}
-            fontSize={12}
-            margin={0}
+        <div className="flex flex-col items-center justify-center gap-2">
+          <QRCodeSVG
+            value={`https://x.com/${user.username}`}
+            size={128}
+            level="L"
+            includeMargin={false}
           />
+          <span className="text-xs text-gray-500">x.com/{user.username}</span>
         </div>
       </div>
     </ReceiptLayout>
