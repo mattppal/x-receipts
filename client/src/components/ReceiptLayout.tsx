@@ -4,8 +4,6 @@ import { CheckCircle, Link as LinkIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
-import { PDFDownloadLink, Document, Page } from "@react-pdf/renderer";
-import { Download } from "lucide-react";
 
 type ReceiptLayoutProps = PropsWithChildren<{
   username: string;
@@ -15,19 +13,11 @@ type ReceiptLayoutProps = PropsWithChildren<{
     tweets: number;
   };
   onDownload?: () => void;
-  onDownloadPDF?: React.ReactNode;
   onShare?: () => void;
   isVerified?: boolean;
   accountAge?: number;
+  className?: string;
 }>;
-
-const PDFReceipt = ({ children }) => (
-  <Document>
-    <Page size="A4" style={{ padding: 30, fontFamily: "Helvetica" }}>
-      {children}
-    </Page>
-  </Document>
-);
 
 function AccountAgeStamp({ years }: { years: number }) {
   return (
@@ -43,7 +33,7 @@ function AccountAgeStamp({ years }: { years: number }) {
 }
 
 function VerificationStamp({ isVerified }: { isVerified: boolean }) {
-  if (isVerified) return null; // Only show stamp when verified is true
+  if (isVerified) return null;
 
   return (
     <div className="absolute top-16 left-8 transform rotate-12">
@@ -61,13 +51,11 @@ export function ReceiptLayout({
   username,
   metrics,
   onDownload,
-  onDownloadPDF,
   onShare,
   isVerified,
   accountAge,
   children,
   className,
-  ...props
 }: ReceiptLayoutProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -83,8 +71,7 @@ export function ReceiptLayout({
 
         const heightFactor = Math.min(contentHeight / 1000, 1);
         const dynamicBlur = baseBlur + (maxBlur - baseBlur) * heightFactor;
-        const dynamicSpread =
-          baseSpread + (maxSpread - baseSpread) * heightFactor;
+        const dynamicSpread = baseSpread + (maxSpread - baseSpread) * heightFactor;
 
         wrapperRef.current.style.filter = `drop-shadow(0 ${dynamicSpread}px ${dynamicBlur}px rgba(0, 0, 0, ${0.1 + heightFactor * 0.1}))`;
       }
@@ -104,10 +91,7 @@ export function ReceiptLayout({
   }, []);
 
   return (
-    <div className={twMerge(
-      "flex justify-center items-center py-8",
-      className
-    )}>
+    <div className={twMerge("flex justify-center items-center py-8", className)}>
       <div
         ref={wrapperRef}
         id="receipt-wrapper"
@@ -122,31 +106,13 @@ export function ReceiptLayout({
       >
         <div className="p-8">
           <div ref={contentRef} className="space-y-6" id="receipt">
-            <PDFDownloadLink
-              document={<PDFReceipt>{children}</PDFReceipt>}
-              fileName={`x-receipt-${username}.pdf`}
-            >
-              {({ loading }) => (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={loading}
-                  onClick={() => {
-                    console.log("Downloading PDF for", username);
-                  }}
-                >
-                  <Download className="size-4" />
-                  <span className="sr-only">Download Receipt</span>
-                </Button>
-              )}
-            </PDFDownloadLink>
             {children}
           </div>
         </div>
         <VerificationStamp isVerified={isVerified || false} />
         {accountAge !== undefined && <AccountAgeStamp years={accountAge} />}
       </div>
-      {(onDownload || onDownloadPDF || onShare) && (
+      {(onDownload || onShare) && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-black/75 backdrop-blur-sm rounded-full p-2 flex gap-2">
           {onDownload && (
             <Button
@@ -155,14 +121,6 @@ export function ReceiptLayout({
               variant="ghost"
             >
               Download PNG
-            </Button>
-          )}
-          {onDownloadPDF && (
-            <Button
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
-              variant="ghost"
-            >
-              {onDownloadPDF}
             </Button>
           )}
           {onShare && (
@@ -186,7 +144,7 @@ export function ReceiptLine({
   verified,
 }: {
   label: string;
-  value: string | number;
+  value: string | number | React.ReactNode;
   verified?: boolean;
 }) {
   return (
@@ -206,7 +164,6 @@ export function ReceiptHeader({
   date,
   orderNumber,
 }: {
-  title: string;
   date: string;
   orderNumber?: string;
 }) {
