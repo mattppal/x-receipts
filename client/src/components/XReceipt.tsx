@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import useSWR from "swr";
 import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import { format, differenceInYears } from "date-fns";
 import { fetchXUser } from "../lib/x";
 import { useToast } from "../hooks/use-toast";
@@ -16,6 +15,147 @@ import { Separator } from "./ui/separator";
 import { QRCodeSVG } from "qrcode.react";
 import { Icons } from "./ui/icons";
 import { Link as LinkIcon } from "lucide-react";
+import { 
+  Document, 
+  Page, 
+  Text, 
+  View, 
+  StyleSheet, 
+  PDFDownloadLink,
+  Font 
+} from '@react-pdf/renderer';
+
+// Register a default font
+Font.register({
+  family: 'Inter',
+  src: 'https://rsms.me/inter/font-files/Inter-Regular.woff2',
+});
+
+// PDF styles
+const styles = StyleSheet.create({
+  page: {
+    flexDirection: 'column',
+    backgroundColor: '#ffffff',
+    padding: 40,
+    fontFamily: 'Inter',
+  },
+  header: {
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 10,
+  },
+  date: {
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 5,
+  },
+  orderNumber: {
+    fontSize: 10,
+    color: '#888888',
+  },
+  section: {
+    marginBottom: 15,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  label: {
+    fontSize: 10,
+    color: '#666666',
+  },
+  value: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  separator: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#dddddd',
+    borderBottomStyle: 'dashed',
+    marginVertical: 15,
+  },
+  footer: {
+    marginTop: 30,
+    textAlign: 'center',
+    fontSize: 10,
+    color: '#666666',
+  },
+});
+
+// PDF Document Component
+const ReceiptPDF = ({ user, orderNumber }: { user: any, orderNumber: string }) => (
+  <Document>
+    <Page size="A4" style={styles.page}>
+      <View style={styles.header}>
+        <Text style={styles.title}>X RECEIPT</Text>
+        <Text style={styles.date}>{format(new Date(), "EEEE, MMMM dd, yyyy")}</Text>
+        <Text style={styles.orderNumber}>ORDER #{orderNumber}</Text>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.row}>
+          <Text style={styles.label}>CUSTOMER:</Text>
+          <Text style={styles.value}>{user.name}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>@USERNAME:</Text>
+          <Text style={styles.value}>{user.username}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>BIO:</Text>
+          <Text style={styles.value}>{user.description || "No bio"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>LOCATION:</Text>
+          <Text style={styles.value}>{user.location || "Not specified"}</Text>
+        </View>
+      </View>
+
+      <View style={styles.separator} />
+
+      <View style={styles.section}>
+        <View style={styles.row}>
+          <Text style={styles.label}>POSTS:</Text>
+          <Text style={styles.value}>{user.public_metrics.tweet_count.toLocaleString()}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>FOLLOWERS:</Text>
+          <Text style={styles.value}>{user.public_metrics.followers_count.toLocaleString()}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>FOLLOWING:</Text>
+          <Text style={styles.value}>{user.public_metrics.following_count.toLocaleString()}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>LISTED:</Text>
+          <Text style={styles.value}>{user.public_metrics.listed_count.toLocaleString()}</Text>
+        </View>
+      </View>
+
+      <View style={styles.separator} />
+
+      <View style={styles.section}>
+        <View style={styles.row}>
+          <Text style={styles.label}>VERIFIED:</Text>
+          <Text style={styles.value}>{user.verified ? "Yes" : "No"}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>MEMBER SINCE:</Text>
+          <Text style={styles.value}>{format(new Date(user.created_at), "MMM dd, yyyy")}</Text>
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <Text>THANK YOU FOR POSTING!</Text>
+        <Text>x.com/{user.username}</Text>
+      </View>
+    </Page>
+  </Document>
+);
 
 type XReceiptProps = {
   username: string;
@@ -55,43 +195,6 @@ export function XReceipt({ username }: XReceiptProps) {
         toast({
           title: "Error",
           description: "Failed to download receipt",
-          variant: "destructive",
-        });
-      }
-    }
-  }, [username, toast]);
-
-  const handleDownloadPDF = useCallback(async () => {
-    const receipt = document.getElementById("receipt");
-    if (receipt) {
-      try {
-        const canvas = await html2canvas(receipt, {
-          backgroundColor: "#ffffff",
-          scale: 2,
-          windowWidth: receipt.scrollWidth,
-          windowHeight: receipt.scrollHeight,
-          x: 0,
-          y: 0,
-          width: receipt.offsetWidth,
-          height: receipt.offsetHeight,
-          useCORS: true,
-          logging: false,
-          padding: 20,
-        });
-
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "px",
-          format: [canvas.width + 40, canvas.height + 40],
-        });
-
-        pdf.addImage(imgData, "PNG", 20, 20, canvas.width, canvas.height);
-        pdf.save(`x-receipt-${username}.pdf`);
-      } catch (err) {
-        toast({
-          title: "Error",
-          description: "Failed to download PDF",
           variant: "destructive",
         });
       }
@@ -146,17 +249,21 @@ export function XReceipt({ username }: XReceiptProps) {
   return (
     <ReceiptLayout
       onDownload={handleDownload}
-      onDownloadPDF={handleDownloadPDF}
+      onDownloadPDF={
+        <PDFDownloadLink
+          document={<ReceiptPDF user={user} orderNumber={orderNumber} />}
+          fileName={`x-receipt-${username}.pdf`}
+          className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
+        >
+          {({ loading }) =>
+            loading ? 'Preparing PDF...' : 'Download PDF'
+          }
+        </PDFDownloadLink>
+      }
       onShare={handleShare}
       isVerified={user.verified}
       accountAge={accountAge}
     >
-      <ReceiptHeader
-        title="X RECEIPT"
-        date={format(new Date(), "EEEE, MMMM dd, yyyy")}
-        orderNumber={orderNumber}
-      />
-
       {user.profile_image_url && (
         <div className="flex justify-center mb-6">
           <img
