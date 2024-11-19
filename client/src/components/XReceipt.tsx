@@ -1,9 +1,8 @@
-import { useCallback } from "react";
 import useSWR from "swr";
 import { format, differenceInYears } from "date-fns";
 import { fetchXUser } from "../lib/x";
 import { useToast } from "../hooks/use-toast";
-import { useToPng } from '@hugocxl/react-to-image';
+
 import {
   ReceiptLayout,
   ReceiptHeader,
@@ -26,43 +25,6 @@ export function XReceipt({ username }: XReceiptProps) {
   );
 
   const { toast } = useToast();
-
-  const [{ isSuccess }, convert, ref] = useToPng<HTMLDivElement>({
-    onSuccess: (data) => {
-      navigator.clipboard.writeText(data);
-      toast({
-        title: "Success",
-        description: "Receipt image copied to clipboard",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to copy receipt image",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const handleShare = useCallback(() => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: "X Receipt",
-          text: `Check out ${username}'s X receipt!`,
-          url: window.location.href,
-        })
-        .catch(() => {
-          toast({
-            title: "Error",
-            description: "Failed to share receipt",
-            variant: "destructive",
-          });
-        });
-    } else {
-      convert();
-    }
-  }, [username, toast, convert]);
 
   if (userError) {
     return (
@@ -95,10 +57,9 @@ export function XReceipt({ username }: XReceiptProps) {
   })();
 
   return (
-    <div ref={ref}>
+    <div>
       <ReceiptLayout
         username={username}
-        onShare={handleShare}
         isVerified={user.verified}
         accountAge={accountAge}
       >
@@ -124,7 +85,7 @@ export function XReceipt({ username }: XReceiptProps) {
           <ReceiptLine label="BIO:" value={user.description || "No bio"} />
           <ReceiptLine
             label="LOCATION:"
-            value={user.location || "Not specified"}
+            value={user.location || "???"}
           />
           <ReceiptLine
             label="WEBSITE:"
@@ -160,6 +121,10 @@ export function XReceipt({ username }: XReceiptProps) {
           <ReceiptLine
             label="LISTED:"
             value={user.public_metrics.listed_count.toLocaleString()}
+          />
+          <ReceiptLine
+            label="LIKES:"
+            value={user.public_metrics.like_count?.toLocaleString() || "0"}
           />
         </div>
 
@@ -221,7 +186,7 @@ export function XReceipt({ username }: XReceiptProps) {
         )}
 
         <ReceiptFooter
-          text="THANK YOU FOR POSTING!"
+          text="THANK YOU FOR POASTING!"
           url={profileUrl}
           footerLink={
             <a
@@ -235,7 +200,7 @@ export function XReceipt({ username }: XReceiptProps) {
           }
         />
 
-        <div className="mt-6 pt-4 border-t border-dashed">
+        <div className="mt-6 pt-4">
           <div className="flex flex-col items-center justify-center gap-2">
             <QRCodeSVG
               value={profileUrl}
