@@ -20,7 +20,7 @@ type XReceiptProps = {
 
 export function XReceipt({ username }: XReceiptProps) {
   const { data: user, error: userError } = useSWR(
-    username ? `/x/users/${username}` : null,
+    username ? `/x/users/${username}?user.fields=verified_type` : null,
     () => fetchXUser(username),
   );
 
@@ -55,12 +55,26 @@ export function XReceipt({ username }: XReceiptProps) {
     }
     return `https://x.com/${user.username}`;
   })();
+  
+  const getVerificationString = (type: string) => {
+    switch (type) {
+      case 'blue':
+        return 'Blue';
+      case 'business':
+        return 'Business';
+      case 'government':
+        return 'Government';
+      case 'none':
+      default:
+        return 'No';
+    }
+  };
 
   return (
     <div>
       <ReceiptLayout
         username={username}
-        isVerified={user.verified}
+        isVerified={user.verified_type !== 'none'}
         accountAge={accountAge}
       >
         <ReceiptHeader
@@ -122,10 +136,6 @@ export function XReceipt({ username }: XReceiptProps) {
             label="LISTED:"
             value={user.public_metrics.listed_count.toLocaleString()}
           />
-          <ReceiptLine
-            label="LIKES:"
-            value={user.public_metrics.like_count?.toLocaleString() || "0"}
-          />
         </div>
 
         <Separator className="my-4 border-dashed" />
@@ -133,8 +143,8 @@ export function XReceipt({ username }: XReceiptProps) {
         <div className="space-y-2">
           <ReceiptLine
             label="VERIFIED:"
-            value={user.verified ? "Yes" : "No"}
-            verified={user.verified}
+            value={getVerificationString(user.verified_type)}
+            verified={user.verified_type !== 'none'}
           />
           <ReceiptLine
             label="MEMBER SINCE:"
