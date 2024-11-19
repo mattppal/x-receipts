@@ -21,7 +21,7 @@ export default function Home() {
 
         // Create a ClipboardItem with the image MIME type
         const clipboardItem = new ClipboardItem({
-            [blob.type]: blob
+          [blob.type]: blob,
         });
 
         // Write the image to clipboard
@@ -122,14 +122,7 @@ export default function Home() {
         </Card>
 
         {username && (
-          <div 
-            ref={ref}
-            className="mt-8 transition-shadow duration-200 ease-in-out hover:shadow-lg rounded-lg overflow-hidden"
-            style={{
-              filter: 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.1))',
-              transform: 'translateZ(0)'
-            }}
-          >
+          <div className="pb-12" ref={ref}>
             <XReceipt username={username} />
           </div>
         )}
@@ -140,18 +133,18 @@ export default function Home() {
           <Button
             onClick={handleShare}
             disabled={isSharing || isLoading}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
+            className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
             variant="ghost"
           >
-            {isSharing ? "Sharing..." : "Share"}
+            {isSharing ? "Copying..." : "Copy image"}
           </Button>
-          <Button
+          {/* <Button
             onClick={handleDownload}
             className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
             variant="ghost"
           >
             Download
-          </Button>
+          </Button> */}
         </div>
       )}
     </div>

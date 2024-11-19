@@ -182,7 +182,7 @@ export function ReceiptFooter({
   footerLink?: React.ReactNode;
 }) {
   return (
-    <div className="text-center mt-6 pt-6 space-y-4">
+    <div className="text-center space-y-4">
       <Separator className="my-4 border-dashed" />
       {url && (
         <div className="text-sm space-y-1 text-gray-600 flex items-center justify-center gap-1">
