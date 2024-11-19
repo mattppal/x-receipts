@@ -2,7 +2,7 @@ import { PropsWithChildren, useEffect, useRef } from "react";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
-import {Separator} from './ui/separator';
+import { Separator } from './ui/separator';
 
 const getTenureColor = (years: number): { border: string; text: string } => {
   if (years < 1) return { border: "border-emerald-400", text: "text-emerald-400" };
@@ -19,7 +19,7 @@ type ReceiptLayoutProps = PropsWithChildren<{
     following: number;
     tweets: number;
   };
-  isVerified?: boolean;
+  verifiedType: string;
   accountAge?: number;
 }>;
 
@@ -37,15 +37,32 @@ function AccountAgeStamp({ years }: { years: number }) {
   );
 }
 
-function VerificationStamp({ isVerified }: { isVerified: boolean }) {
-  if (isVerified) return null;
+function VerificationStamp({ type }: { type: string }) {
+  if (type === 'none') return null;
+
+  const getVerificationDetails = (type: string) => {
+    switch (type) {
+      case 'blue':
+        return { text: 'BLUE', color: 'blue' };
+      case 'business':
+        return { text: 'BUSINESS', color: 'gold' };
+      case 'government':
+        return { text: 'GOVT', color: 'gray' };
+      default:
+        return { text: 'VERIFIED', color: 'blue' };
+    }
+  };
+
+  const details = getVerificationDetails(type);
+  const borderColor = `border-${details.color}-500`;
+  const textColor = `text-${details.color}-500`;
 
   return (
     <div className="absolute top-16 left-8 transform rotate-12">
-      <div className="border-4 border-blue-500 rounded-full w-24 h-24 flex items-center justify-center">
-        <div className="text-blue-500 flex flex-col items-center">
+      <div className={`border-4 ${borderColor} rounded-full w-24 h-24 flex items-center justify-center`}>
+        <div className={`${textColor} flex flex-col items-center`}>
           <CheckCircle className="w-8 h-8" />
-          <span className="text-xs font-bold mt-1">VERIFIED</span>
+          <span className="text-xs font-bold mt-1">{details.text}</span>
         </div>
       </div>
     </div>
@@ -55,7 +72,7 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
 export function ReceiptLayout({
   username,
   metrics,
-  isVerified,
+  verifiedType,
   accountAge,
   children,
   className,
@@ -106,7 +123,7 @@ export function ReceiptLayout({
             {children}
           </div>
         </div>
-        <VerificationStamp isVerified={isVerified || false} />
+        <VerificationStamp type={verifiedType} />
         {accountAge !== undefined && <AccountAgeStamp years={accountAge} />}
       </div>
     </div>

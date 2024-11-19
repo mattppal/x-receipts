@@ -74,7 +74,7 @@ export function XReceipt({ username }: XReceiptProps) {
     <div>
       <ReceiptLayout
         username={username}
-        isVerified={user.verified_type !== 'none'}
+        verifiedType={user.verified_type}
         accountAge={accountAge}
       >
         <ReceiptHeader
