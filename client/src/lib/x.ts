@@ -88,7 +88,7 @@ export const xUserSchema = z.object({
     like_count: z.number(),
   }),
   url: z.string().optional(),
-  verified: z.boolean(),
+  verified_type: z.enum(['blue', 'business', 'government', 'none']).default('none'),
   withheld: z.object({}).optional(),
 });
 
