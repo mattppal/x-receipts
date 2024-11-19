@@ -2,8 +2,8 @@ import { PropsWithChildren, useEffect, useRef } from "react";
 import { CheckCircle, Link as LinkIcon } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
+import {Separator} from './ui/separator';
 
-// Add tenure color mapping
 const getTenureColor = (years: number): { border: string; text: string } => {
   if (years < 1) return { border: "border-emerald-400", text: "text-emerald-400" };
   if (years <= 3) return { border: "border-blue-400", text: "text-blue-400" };
@@ -48,20 +48,6 @@ function VerificationStamp({ isVerified }: { isVerified: boolean }) {
           <span className="text-xs font-bold mt-1">VERIFIED</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ReceiptSeparator() {
-  return (
-    <div className="my-6 flex items-center">
-      <div className="flex-1 border-t border-dotted border-gray-300"></div>
-      <div className="mx-2">
-        <svg width="6" height="6" viewBox="0 0 6 6" className="text-gray-300">
-          <circle cx="3" cy="3" r="1.5" fill="currentColor" />
-        </svg>
-      </div>
-      <div className="flex-1 border-t border-dotted border-gray-300"></div>
     </div>
   );
 }
@@ -114,13 +100,6 @@ export function ReceiptLayout({
         ref={wrapperRef}
         id="receipt-wrapper"
         className="relative bg-white max-w-md w-full mx-auto shadow-lg font-mono text-sm rounded-lg transform rotate-1"
-        style={{
-          backgroundImage: `
-            repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, transparent 1px, transparent 2px),
-            radial-gradient(circle at center, rgba(0,0,0,0.02) 0%, transparent 100%)
-          `,
-          backgroundSize: "auto, 100% 100%",
-        }}
       >
         <div className="p-8">
           <div ref={contentRef} className="space-y-6" id="receipt">
@@ -165,6 +144,7 @@ export function ReceiptHeader({
 }) {
   return (
     <div className="text-center space-y-2">
+      <div className="text-xs text-gray-500 mb-4">x-receipts.replit.app</div>
       <div className="text-xl font-bold tracking-wider flex items-center justify-center gap-2">
         <div className="mb-4">
           <svg
@@ -187,7 +167,7 @@ export function ReceiptHeader({
       {orderNumber && (
         <div className="text-sm text-gray-500">ORDER #{orderNumber}</div>
       )}
-      <ReceiptSeparator />
+      <Separator className="my-4 border-dashed" />
     </div>
   );
 }
@@ -203,7 +183,7 @@ export function ReceiptFooter({
 }) {
   return (
     <div className="text-center mt-6 pt-6 space-y-4">
-      <ReceiptSeparator />
+      <Separator className="my-4 border-dashed" />
       {url && (
         <div className="text-sm space-y-1 text-gray-600 flex items-center justify-center gap-1">
           <LinkIcon className="w-4 h-4" />
