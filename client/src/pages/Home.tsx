@@ -17,11 +17,15 @@ export default function Home() {
   const [{ isLoading }, convert, ref] = useToPng<HTMLDivElement>({
     onSuccess: async (data) => {
       try {
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            "image/png": data,
-          }),
-        ]);
+        const blob = await (await fetch(data)).blob();
+
+        // Create a ClipboardItem with the image MIME type
+        const clipboardItem = new ClipboardItem({
+            [blob.type]: blob
+        });
+
+        // Write the image to clipboard
+        await navigator.clipboard.write([clipboardItem]);
         toast({
           title: "Success",
           description: "Receipt copied to clipboard!",
@@ -51,7 +55,7 @@ export default function Home() {
   const handleShare = useCallback(async () => {
     if (!username) return;
     setIsSharing(true);
-    
+
     try {
       await convert();
     } catch (error) {
@@ -118,7 +122,14 @@ export default function Home() {
         </Card>
 
         {username && (
-          <div className="mt-8" ref={ref}>
+          <div 
+            ref={ref}
+            className="mt-8 transition-shadow duration-200 ease-in-out hover:shadow-lg rounded-lg overflow-hidden"
+            style={{
+              filter: 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.1))',
+              transform: 'translateZ(0)'
+            }}
+          >
             <XReceipt username={username} />
           </div>
         )}
