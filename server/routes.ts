@@ -5,7 +5,9 @@ import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-const BYPASS_CACHE = process.env.NODE_ENV === 'development' && process.env.FORCE_BYPASS_CACHE === 'true';
+const BYPASS_CACHE =
+  process.env.NODE_ENV === "development" &&
+  process.env.FORCE_BYPASS_CACHE === "true";
 
 export function registerRoutes(app: Express) {
   app.get("/api/x/users/:username", async (req, res) => {
@@ -34,13 +36,13 @@ export function registerRoutes(app: Express) {
 
             // Return cached data if valid
             if (cacheAge < CACHE_DURATION_MS) {
-              res.set('X-Cache-Hit', 'true');
-              res.set('X-Cache-Age', `${Math.floor(cacheAge / 1000)}s`);
+              res.set("X-Cache-Hit", "true");
+              res.set("X-Cache-Age", `${Math.floor(cacheAge / 1000)}s`);
               return res.json(cache.data);
             }
           }
         } catch (cacheError) {
-          console.error('Cache retrieval error:', cacheError);
+          console.error("Cache retrieval error:", cacheError);
           // Continue to API call if cache fails
         }
       }
@@ -63,7 +65,7 @@ export function registerRoutes(app: Express) {
           "public_metrics",
           "url",
           "verified",
-          "withheld"
+          "withheld",
         ],
       });
 
@@ -79,13 +81,33 @@ export function registerRoutes(app: Express) {
       if (user.data.pinned_tweet_id) {
         try {
           const tweet = await client.v2.singleTweet(user.data.pinned_tweet_id, {
-            "tweet.fields": ["created_at", "public_metrics", "attachments", "entities"],
+            "tweet.fields": [
+              "created_at",
+              "public_metrics",
+              "attachments",
+              "entities",
+            ],
           });
           pinnedTweet = tweet.data;
         } catch (error) {
           console.error("Failed to fetch pinned tweet:", error);
         }
       }
+
+      // Safely process entities
+      const processedEntities = {
+        url: user.data.entities?.url,
+        description: {
+          ...user.data.entities?.description,
+          mentions:
+            user.data.entities?.description?.mentions?.map((mention) => ({
+              ...mention,
+              username: mention.username || "",
+              start: mention.start || 0,
+              end: mention.end || 0,
+            })) || [],
+        },
+      };
 
       // Format the response according to the schema
       const formattedData = {
@@ -94,7 +116,7 @@ export function registerRoutes(app: Express) {
         username: user.data.username,
         created_at: user.data.created_at,
         description: user.data.description,
-        entities: user.data.entities,
+        entities: processedEntities,
         location: user.data.location,
         pinned_tweet_id: user.data.pinned_tweet_id,
         profile_image_url: user.data.profile_image_url?.replace("_normal", ""),
@@ -103,16 +125,18 @@ export function registerRoutes(app: Express) {
         url: user.data.url,
         verified: user.data.verified,
         withheld: user.data.withheld,
-        pinned_tweet: pinnedTweet ? {
-          text: pinnedTweet.text,
-          created_at: pinnedTweet.created_at,
-          retweet_count: pinnedTweet.public_metrics?.retweet_count ?? 0,
-          reply_count: pinnedTweet.public_metrics?.reply_count ?? 0,
-          like_count: pinnedTweet.public_metrics?.like_count ?? 0,
-          media: pinnedTweet.attachments?.media_keys
-            ? pinnedTweet.attachments.media_keys.map((key) => ({ key }))
-            : [],
-        } : undefined,
+        pinned_tweet: pinnedTweet
+          ? {
+              text: pinnedTweet.text,
+              created_at: pinnedTweet.created_at,
+              retweet_count: pinnedTweet.public_metrics?.retweet_count ?? 0,
+              reply_count: pinnedTweet.public_metrics?.reply_count ?? 0,
+              like_count: pinnedTweet.public_metrics?.like_count ?? 0,
+              media: pinnedTweet.attachments?.media_keys
+                ? pinnedTweet.attachments.media_keys.map((key) => ({ key }))
+                : [],
+            }
+          : undefined,
       };
 
       // Store in cache (unless bypassed)
@@ -133,18 +157,21 @@ export function registerRoutes(app: Express) {
               },
             });
         } catch (cacheError) {
-          console.error('Cache update error:', cacheError);
+          console.error("Cache update error:", cacheError);
           // Continue despite cache error
         }
       }
 
-      res.set('X-Cache-Hit', 'false');
-      res.set('Cache-Control', 'public, max-age=300');
+      res.set("X-Cache-Hit", "false");
+      res.set("Cache-Control", "public, max-age=300");
       res.json(formattedData);
     } catch (error: any) {
       console.error("X API error:", error);
 
-      if (error.code === 429 || (error.errors && error.errors[0]?.code === 88)) {
+      if (
+        error.code === 429 ||
+        (error.errors && error.errors[0]?.code === 88)
+      ) {
         const resetTime = error.rateLimit?.reset
           ? new Date(error.rateLimit.reset * 1000).toISOString()
           : undefined;

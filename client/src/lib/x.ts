@@ -26,7 +26,7 @@ const descriptionEntitySchema = z.object({
   mentions: z.array(z.object({
     start: z.number(),
     end: z.number(),
-    tag: z.string()
+    tag: z.string().optional()
   })).optional(),
   cashtags: z.array(z.object({
     start: z.number(),
@@ -53,7 +53,7 @@ export const xUserSchema = z.object({
   description: z.string().optional(),
   entities: z.object({
     url: urlEntitySchema.optional(),
-    description: descriptionEntitySchema.optional()
+    description: descriptionEntitySchema.optional(),
   }).optional(),
   location: z.string().optional(),
   pinned_tweet_id: z.string().optional(),

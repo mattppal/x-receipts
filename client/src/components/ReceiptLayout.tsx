@@ -144,7 +144,7 @@ export function ReceiptHeader({
 }) {
   return (
     <div className="text-center space-y-2">
-      <div className="text-xs text-gray-500 mb-4">x-receipts.replit.app</div>
+      <div className="text-xs text-gray-300 mb-4"><a href="https://x-receipts.replit.app" target="_blank">https://x-receipts.replit.app</a></div>
       <div className="text-xl font-bold tracking-wider flex items-center justify-center gap-2">
         <div className="mb-4">
           <svg

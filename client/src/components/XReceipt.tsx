@@ -127,7 +127,7 @@ export function XReceipt({ username }: XReceiptProps) {
         />
       </div>
 
-      <Separator className="my-4 border-dashed" />
+      <Separator/>
 
       <div className="space-y-2">
         <ReceiptLine
