@@ -9,6 +9,13 @@ const BYPASS_CACHE =
   process.env.NODE_ENV === "development" &&
   process.env.FORCE_BYPASS_CACHE === "true";
 
+function logApiResponse(prefix: string, data: any) {
+  console.log('\n=== X API Response ===');
+  console.log(`${prefix}:`);
+  console.log(JSON.stringify(data, null, 2));
+  console.log('====================\n');
+}
+
 export function registerRoutes(app: Express) {
   app.get("/api/x/users/:username", async (req, res) => {
     if (!process.env.X_BEARER_TOKEN) {
@@ -18,10 +25,9 @@ export function registerRoutes(app: Express) {
       });
     }
 
-    const username = req.params.username.toLowerCase(); // Normalize username
+    const username = req.params.username.toLowerCase();
 
     try {
-      // Check cache first (unless bypassed)
       if (!BYPASS_CACHE && !req.query.nocache) {
         try {
           const cachedData = await db
@@ -34,8 +40,8 @@ export function registerRoutes(app: Express) {
             const cache = cachedData[0];
             const cacheAge = Date.now() - cache.cached_at.getTime();
 
-            // Return cached data if valid
             if (cacheAge < CACHE_DURATION_MS) {
+              logApiResponse('Cache Hit Response', cache.data);
               res.set("X-Cache-Hit", "true");
               res.set("X-Cache-Age", `${Math.floor(cacheAge / 1000)}s`);
               return res.json(cache.data);
@@ -43,11 +49,9 @@ export function registerRoutes(app: Express) {
           }
         } catch (cacheError) {
           console.error("Cache retrieval error:", cacheError);
-          // Continue to API call if cache fails
         }
       }
 
-      // Fetch fresh data from X API
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
 
       const user = await client.v2.userByUsername(username, {
@@ -69,6 +73,8 @@ export function registerRoutes(app: Express) {
         ],
       });
 
+      logApiResponse('User API Response', user);
+
       if (!user.data) {
         return res.status(404).json({
           error: "User not found",
@@ -76,7 +82,6 @@ export function registerRoutes(app: Express) {
         });
       }
 
-      // Fetch pinned tweet if it exists
       let pinnedTweet;
       if (user.data.pinned_tweet_id) {
         try {
@@ -88,13 +93,13 @@ export function registerRoutes(app: Express) {
               "entities",
             ],
           });
+          logApiResponse('Pinned Tweet API Response', tweet);
           pinnedTweet = tweet.data;
         } catch (error) {
           console.error("Failed to fetch pinned tweet:", error);
         }
       }
 
-      // Safely process entities
       const processedEntities = {
         url: user.data.entities?.url,
         description: {
@@ -109,7 +114,6 @@ export function registerRoutes(app: Express) {
         },
       };
 
-      // Format the response according to the schema
       const formattedData = {
         id: user.data.id,
         name: user.data.name,
@@ -139,7 +143,8 @@ export function registerRoutes(app: Express) {
           : undefined,
       };
 
-      // Store in cache (unless bypassed)
+      logApiResponse('Formatted Response', formattedData);
+
       if (!BYPASS_CACHE) {
         try {
           await db
@@ -158,7 +163,6 @@ export function registerRoutes(app: Express) {
             });
         } catch (cacheError) {
           console.error("Cache update error:", cacheError);
-          // Continue despite cache error
         }
       }
 
@@ -167,6 +171,7 @@ export function registerRoutes(app: Express) {
       res.json(formattedData);
     } catch (error: any) {
       console.error("X API error:", error);
+      logApiResponse('Error Response', error);
 
       if (
         error.code === 429 ||
