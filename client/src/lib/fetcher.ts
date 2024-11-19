@@ -1,27 +1,31 @@
-export class FetchError extends Error {
-  info: any;
-  status: number;
-  constructor(message: string, info: any, status: number) {
-    super(message);
-    this.info = info;
-    this.status = status;
-  }
-}
-
-// Fetcher function for SWR that includes credentials and handles non-200 responses
-export const fetcher = async (url: string) => {
-  const res = await fetch(url, {
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    const error = new FetchError(
-      `A ${res.status} error occurred while fetching the data.`,
-      await res.json(),
-      res.status,
-    );
+export async function fetcher<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    const error = await response.json();
+    if (response.status === 429) {
+      throw {
+        status: 429,
+        message: "Rate limit exceeded",
+        details: error.details || "Too many requests, please try again later",
+      };
+    }
     throw error;
   }
 
-  return res.json();
-};
+  // Update rate limit meta tags
+  const remaining = response.headers.get('x-ratelimit-remaining');
+  const reset = response.headers.get('x-ratelimit-reset');
+  
+  if (remaining) {
+    let meta = document.querySelector('meta[name="x-ratelimit-remaining"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'x-ratelimit-remaining');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', remaining);
+  }
+
+  return response.json();
+}
