@@ -35,8 +35,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Listen for rate limit updates
+    const handleRateLimitUpdate = (event: CustomEvent<typeof rateLimitInfo>) => {
+      setRateLimitInfo(event.detail);
+      setIsRateLimited(event.detail.remaining <= 0);
+    };
+
+    window.addEventListener('ratelimitupdate', handleRateLimitUpdate as EventListener);
     updateRateLimitInfo();
-  }, [username, updateRateLimitInfo]);
+
+    return () => {
+      window.removeEventListener('ratelimitupdate', handleRateLimitUpdate as EventListener);
+    };
+  }, [updateRateLimitInfo]);
 
   const demoUsers = ["elonmusk", "amasad", "sama", "mattppal"];
 
