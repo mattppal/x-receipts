@@ -28,13 +28,14 @@ export class RateLimiter {
       return false;
     }
 
-    // If within window but exceeded limit
-    if (clientLimit.count >= this.MAX_REQUESTS) {
+    // Increment counter before checking limit
+    clientLimit.count += 1;
+
+    // Check if over limit
+    if (clientLimit.count > this.MAX_REQUESTS) {
       return true;
     }
 
-    // Increment counter
-    clientLimit.count += 1;
     return false;
   }
 
@@ -44,9 +45,10 @@ export class RateLimiter {
     resetTime: Date | null;
   } {
     const clientId = this.getClientId(req);
+    const now = new Date();
     const clientLimit = this.limits.get(clientId);
 
-    if (!clientLimit) {
+    if (!clientLimit || now > clientLimit.resetTime) {
       return {
         remaining: this.MAX_REQUESTS,
         limit: this.MAX_REQUESTS,
@@ -54,8 +56,10 @@ export class RateLimiter {
       };
     }
 
+    const remaining = Math.max(0, this.MAX_REQUESTS - clientLimit.count);
+    
     return {
-      remaining: Math.max(0, this.MAX_REQUESTS - clientLimit.count),
+      remaining,
       limit: this.MAX_REQUESTS,
       resetTime: clientLimit.resetTime
     };
