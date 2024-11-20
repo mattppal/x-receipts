@@ -19,7 +19,6 @@ export default function Home() {
   });
   const [isRateLimited, setIsRateLimited] = useState(false);
 
-  // Update rate limit info whenever it changes
   const updateRateLimitInfo = useCallback(async () => {
     try {
       const response = await fetch('/api/rate-limit');
@@ -35,7 +34,6 @@ export default function Home() {
     }
   }, []);
 
-  // Check rate limit status initially and when username changes
   useEffect(() => {
     updateRateLimitInfo();
   }, [username, updateRateLimitInfo]);
