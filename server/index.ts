@@ -7,19 +7,18 @@ import { createServer } from "http";
 
 const app = express();
 
-// Enhanced CORS configuration
+// Configure CORS
 app.use(cors({
-  origin: process.env.REPLIT_DEV_DOMAIN || "https://x-receipts.replit.app",
-  credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset']
+  origin: process.env.NODE_ENV === "production" 
+    ? "https://x-receipt.replit.app" 
+    : "http://localhost:5173",
+  credentials: true
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Enhanced rate limiting
+// Configure rate limiting
 const limiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 3, // 3 requests per window
@@ -28,24 +27,10 @@ const limiter = rateLimit({
     details: "You can only generate 3 receipts every 24 hours",
     resetTime: null // Will be set dynamically
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
   keyGenerator: (req) => {
-    const forwarded = req.headers["x-forwarded-for"]?.toString();
-    const ip = forwarded ? forwarded.split(',')[0] : req.ip;
-    return ip;
-  },
-  handler: (req, res) => {
-    const resetTime = new Date(Date.now() + limiter.windowMs);
-    res.status(429).json({
-      error: "Rate limit exceeded",
-      details: `Please try again after ${resetTime.toISOString()}`,
-      resetTime: resetTime.toISOString()
-    });
-  },
-  skip: (req) => {
-    // Skip rate limiting for OPTIONS requests
-    return req.method === 'OPTIONS';
+    return req.headers["x-forwarded-for"]?.toString() || req.ip;
   }
 });
 
