@@ -1,32 +1,20 @@
-import type { Express } from "express";
 import { TwitterApi } from "twitter-api-v2";
+import { Router } from "express";
 import { db } from "../db";
 import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
-import { Router } from "express";
-import { fetchUser } from "./x";
+import { RateLimiter } from "./rate-limiter";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-const BYPASS_CACHE =
-  process.env.NODE_ENV === "development" &&
-  process.env.FORCE_BYPASS_CACHE === "true";
+const BYPASS_CACHE = process.env.NODE_ENV === "development" && process.env.FORCE_BYPASS_CACHE === "true";
 
-function logApiResponse(prefix: string, data: any) {
-  console.log("\n=== X API Response ===");
-  console.log(`${prefix}:`);
-  console.log(JSON.stringify(data, null, 2));
-  console.log("====================\n");
-}
+const rateLimiter = new RateLimiter();
 
 export function registerRoutes(app: Router) {
-  // Add a new endpoint to check rate limit status
+  // Rate limit status endpoint
   app.get("/api/rate-limit", (req, res) => {
-    const limiter = req.rateLimit;
-    res.json({
-      remaining: limiter?.remaining || 3,
-      limit: limiter?.limit || 3,
-      resetTime: limiter?.resetTime
-    });
+    const info = rateLimiter.getRateLimitInfo(req);
+    res.json(info);
   });
 
   app.get("/api/x/users/:username", async (req, res) => {
@@ -37,41 +25,42 @@ export function registerRoutes(app: Router) {
       });
     }
 
+    // Check cache first to avoid counting cached responses against rate limit
     const username = req.params.username.toLowerCase();
+    if (!BYPASS_CACHE && !req.query.nocache) {
+      try {
+        const cachedData = await db
+          .select()
+          .from(xUserCache)
+          .where(eq(xUserCache.username, username))
+          .limit(1);
 
-    try {
-      // Check cache first
-      if (!BYPASS_CACHE && !req.query.nocache) {
-        try {
-          const cachedData = await db
-            .select()
-            .from(xUserCache)
-            .where(eq(xUserCache.username, username))
-            .limit(1);
+        if (cachedData.length > 0) {
+          const cache = cachedData[0];
+          const cacheAge = Date.now() - cache.cached_at.getTime();
 
-          if (cachedData.length > 0) {
-            const cache = cachedData[0];
-            const cacheAge = Date.now() - cache.cached_at.getTime();
-
-            if (cacheAge < CACHE_DURATION_MS) {
-              logApiResponse("Cache Hit Response", cache.data);
-              // For cached responses, don't count against rate limit
-              res.set("X-Cache-Hit", "true");
-              res.set("X-Cache-Age", `${Math.floor(cacheAge / 1000)}s`);
-              // Pass through the last known rate limit values without decrementing
-              const rateLimit = req.rateLimit;
-              if (rateLimit) {
-                res.set("X-RateLimit-Remaining", rateLimit.remaining.toString());
-                res.set("X-RateLimit-Reset", rateLimit.resetTime?.toISOString() || '');
-              }
-              return res.json(cache.data);
-            }
+          if (cacheAge < CACHE_DURATION_MS) {
+            res.set("X-Cache-Hit", "true");
+            return res.json(cache.data);
           }
-        } catch (cacheError) {
-          console.error("Cache retrieval error:", cacheError);
         }
+      } catch (error) {
+        console.error("Cache error:", error);
       }
+    }
 
+    // Apply rate limiting for non-cached requests
+    if (rateLimiter.isRateLimited(req)) {
+      const info = rateLimiter.getRateLimitInfo(req);
+      return res.status(429).json({
+        error: "Rate limit exceeded",
+        details: "You can only generate 3 receipts every 24 hours",
+        resetTime: info.resetTime
+      });
+    }
+
+    // Fetch user data from Twitter API
+    try {
       const client = new TwitterApi(process.env.X_BEARER_TOKEN);
 
       const user = await client.v2.userByUsername(username, {
@@ -186,8 +175,10 @@ export function registerRoutes(app: Router) {
         }
       }
 
+      const rateInfo = rateLimiter.getRateLimitInfo(req);
+      res.set("X-RateLimit-Remaining", rateInfo.remaining.toString());
+      res.set("X-RateLimit-Reset", rateInfo.resetTime?.toISOString() || '');
       res.set("X-Cache-Hit", "false");
-      res.set("Cache-Control", "public, max-age=300");
       res.json(formattedData);
     } catch (error: any) {
       console.error("X API error:", error);
