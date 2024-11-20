@@ -1,16 +1,31 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { SearchForm } from "../components/SearchForm";
 import { XReceipt } from "../components/XReceipt";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
-import React from "react";
 import { useToPng } from "@hugocxl/react-to-image";
 
 export default function Home() {
   const [username, setUsername] = useState<string>("");
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
+  const [remainingRequests, setRemainingRequests] = useState<number>(3);
+
+  // Update remaining requests when username changes
+  useEffect(() => {
+    const checkRateLimit = async () => {
+      try {
+        const response = await fetch('/api/rate-limit');
+        const remaining = parseInt(response.headers.get('X-RateLimit-Remaining') || '3');
+        setRemainingRequests(remaining);
+      } catch (error) {
+        console.error('Failed to check rate limit:', error);
+      }
+    };
+    
+    checkRateLimit();
+  }, [username]); // Re-check when username changes
 
   const demoUsers = ["elonmusk", "amasad", "sama", "mattppal"];
 
@@ -18,13 +33,9 @@ export default function Home() {
     onSuccess: async (data) => {
       try {
         const blob = await (await fetch(data)).blob();
-
-        // Create a ClipboardItem with the image MIME type
         const clipboardItem = new ClipboardItem({
           [blob.type]: blob,
         });
-
-        // Write the image to clipboard
         await navigator.clipboard.write([clipboardItem]);
         toast({
           title: "Success",
@@ -69,11 +80,6 @@ export default function Home() {
     }
   }, [username, convert, toast]);
 
-  const handleDownload = useCallback(() => {
-    if (!username) return;
-    console.log("hi");
-  }, [username]);
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-8">
@@ -117,6 +123,10 @@ export default function Home() {
           ))}
         </div>
 
+        <div className="mt-4 text-center text-sm text-gray-500">
+          Receipts generated: {3 - remainingRequests} / 3 per day
+        </div>
+
         <Card className="p-6">
           <SearchForm onSearch={setUsername} />
         </Card>
@@ -138,13 +148,6 @@ export default function Home() {
           >
             {isSharing ? "Copying..." : "Copy image"}
           </Button>
-          {/* <Button
-            onClick={handleDownload}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition"
-            variant="ghost"
-          >
-            Download
-          </Button> */}
         </div>
       )}
     </div>

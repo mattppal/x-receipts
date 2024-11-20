@@ -3,6 +3,8 @@ import { TwitterApi } from "twitter-api-v2";
 import { db } from "../db";
 import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { Router } from "express";
+import { fetchUser } from "./x";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 const BYPASS_CACHE =
@@ -16,7 +18,17 @@ function logApiResponse(prefix: string, data: any) {
   console.log("====================\n");
 }
 
-export function registerRoutes(app: Express) {
+export function registerRoutes(app: Router) {
+  // Add a new endpoint to check rate limit status
+  app.get("/api/rate-limit", (req, res) => {
+    const limiter = req.rateLimit;
+    res.json({
+      remaining: limiter?.remaining || 3,
+      limit: limiter?.limit || 3,
+      resetTime: limiter?.resetTime
+    });
+  });
+
   app.get("/api/x/users/:username", async (req, res) => {
     if (!process.env.X_BEARER_TOKEN) {
       return res.status(500).json({
