@@ -12,22 +12,22 @@ const searchSchema = z.object({
 
 type SearchFormProps = {
   onSearch: (username: string) => void;
+  disabled?: boolean;
 };
 
-export function SearchForm({ onSearch }: SearchFormProps) {
+export function SearchForm({ onSearch, disabled }: SearchFormProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-
   const form = useForm<z.infer<typeof searchSchema>>({
     defaultValues: {
       username: "",
     },
   });
 
-  async function onSubmit(data: z.infer<typeof searchSchema>) {
+  const handleSubmit = async (data: z.infer<typeof searchSchema>) => {
     try {
       setIsGenerating(true);
-      await onSearch(data.username);
+      await onSearch(data.username.trim());
     } catch (error) {
       toast({
         title: "Error",
@@ -37,11 +37,11 @@ export function SearchForm({ onSearch }: SearchFormProps) {
     } finally {
       setIsGenerating(false);
     }
-  }
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-2">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex gap-2">
         <FormField
           control={form.control}
           name="username"
@@ -51,14 +51,14 @@ export function SearchForm({ onSearch }: SearchFormProps) {
                 <Input
                   placeholder="Enter X username"
                   {...field}
-                  disabled={isGenerating}
+                  disabled={isGenerating || disabled}
                 />
               </FormControl>
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isGenerating}>
-          {isGenerating ? "Generating..." : "Generate"}
+        <Button type="submit" disabled={isGenerating || disabled}>
+          {isGenerating ? "Generating..." : "Search"}
         </Button>
       </form>
     </Form>

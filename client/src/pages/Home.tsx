@@ -5,27 +5,40 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
 import { useToPng } from "@hugocxl/react-to-image";
+import { Progress } from "../components/ui/progress";
+import { Alert, AlertDescription } from "../components/ui/alert";
 
 export default function Home() {
   const [username, setUsername] = useState<string>("");
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
-  const [remainingRequests, setRemainingRequests] = useState<number>(3);
+  const [rateLimitInfo, setRateLimitInfo] = useState({
+    remaining: 3,
+    limit: 3,
+    resetTime: null as string | null
+  });
+  const [isRateLimited, setIsRateLimited] = useState(false);
 
-  // Update remaining requests when username changes
+  // Update rate limit info whenever it changes
+  const updateRateLimitInfo = useCallback(async () => {
+    try {
+      const response = await fetch('/api/rate-limit');
+      const data = await response.json();
+      setRateLimitInfo({
+        remaining: data.remaining,
+        limit: data.limit,
+        resetTime: data.resetTime
+      });
+      setIsRateLimited(data.remaining <= 0);
+    } catch (error) {
+      console.error('Failed to check rate limit:', error);
+    }
+  }, []);
+
+  // Check rate limit status initially and when username changes
   useEffect(() => {
-    const checkRateLimit = async () => {
-      try {
-        const response = await fetch('/api/rate-limit');
-        const remaining = parseInt(response.headers.get('X-RateLimit-Remaining') || '3');
-        setRemainingRequests(remaining);
-      } catch (error) {
-        console.error('Failed to check rate limit:', error);
-      }
-    };
-    
-    checkRateLimit();
-  }, [username]); // Re-check when username changes
+    updateRateLimitInfo();
+  }, [username, updateRateLimitInfo]);
 
   const demoUsers = ["elonmusk", "amasad", "sama", "mattppal"];
 
@@ -80,6 +93,8 @@ export default function Home() {
     }
   }, [username, convert, toast]);
 
+  const remainingPercentage = (rateLimitInfo.remaining / rateLimitInfo.limit) * 100;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-8">
@@ -123,12 +138,25 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="mt-4 text-center text-sm text-gray-500">
-          Receipts generated: {3 - remainingRequests} / 3 per day
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-gray-500">
+            <span>Receipts remaining</span>
+            <span>{rateLimitInfo.remaining} / {rateLimitInfo.limit}</span>
+          </div>
+          <Progress value={remainingPercentage} />
         </div>
 
+        {isRateLimited && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Rate limit reached. Please try again later
+              {rateLimitInfo.resetTime && ` after ${new Date(rateLimitInfo.resetTime).toLocaleTimeString()}`}.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Card className="p-6">
-          <SearchForm onSearch={setUsername} />
+          <SearchForm onSearch={setUsername} disabled={isRateLimited} />
         </Card>
 
         {username && (
