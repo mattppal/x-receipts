@@ -28,6 +28,7 @@ export function registerRoutes(app: Express) {
     const username = req.params.username.toLowerCase();
 
     try {
+      // Check cache first
       if (!BYPASS_CACHE && !req.query.nocache) {
         try {
           const cachedData = await db
@@ -42,8 +43,15 @@ export function registerRoutes(app: Express) {
 
             if (cacheAge < CACHE_DURATION_MS) {
               logApiResponse("Cache Hit Response", cache.data);
+              // For cached responses, don't count against rate limit
               res.set("X-Cache-Hit", "true");
               res.set("X-Cache-Age", `${Math.floor(cacheAge / 1000)}s`);
+              // Pass through the last known rate limit values without decrementing
+              const rateLimit = req.rateLimit;
+              if (rateLimit) {
+                res.set("X-RateLimit-Remaining", rateLimit.remaining.toString());
+                res.set("X-RateLimit-Reset", rateLimit.resetTime?.toISOString() || '');
+              }
               return res.json(cache.data);
             }
           }

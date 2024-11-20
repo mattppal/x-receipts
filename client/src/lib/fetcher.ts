@@ -16,8 +16,10 @@ export async function fetcher<T>(url: string): Promise<T> {
   // Update rate limit meta tags
   const remaining = response.headers.get('x-ratelimit-remaining');
   const reset = response.headers.get('x-ratelimit-reset');
+  const wasCache = response.headers.get('x-cache-hit') === 'true';
   
-  if (remaining) {
+  // Only update rate limit if it wasn't a cache hit
+  if (!wasCache && remaining) {
     let meta = document.querySelector('meta[name="x-ratelimit-remaining"]');
     if (!meta) {
       meta = document.createElement('meta');
