@@ -10,6 +10,13 @@ const BYPASS_CACHE = process.env.NODE_ENV === "development" && process.env.FORCE
 
 const rateLimiter = new RateLimiter();
 
+// Add logging utility function
+function logApiResponse(label: string, data: any) {
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[${label}]`, JSON.stringify(data, null, 2));
+  }
+}
+
 export function registerRoutes(app: Router) {
   // Rate limit status endpoint
   app.get("/api/rate-limit", (req, res) => {
