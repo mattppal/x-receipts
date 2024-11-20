@@ -17,25 +17,25 @@ export class RateLimiter {
   public isRateLimited(req: Request): boolean {
     const clientId = this.getClientId(req);
     const now = new Date();
-    const clientLimit = this.limits.get(clientId);
+    let clientLimit = this.limits.get(clientId);
 
     // If no existing rate limit info or window has expired
     if (!clientLimit || now > clientLimit.resetTime) {
-      this.limits.set(clientId, {
+      clientLimit = {
         count: 1,
         resetTime: new Date(now.getTime() + this.WINDOW_MS)
-      });
+      };
+      this.limits.set(clientId, clientLimit);
       return false;
     }
 
-    // Increment counter before checking limit
-    clientLimit.count += 1;
-
-    // Check if over limit
-    if (clientLimit.count > this.MAX_REQUESTS) {
+    // Check if already over limit
+    if (clientLimit.count >= this.MAX_REQUESTS) {
       return true;
     }
 
+    // Increment counter
+    clientLimit.count += 1;
     return false;
   }
 
@@ -56,10 +56,8 @@ export class RateLimiter {
       };
     }
 
-    const remaining = Math.max(0, this.MAX_REQUESTS - clientLimit.count);
-    
     return {
-      remaining,
+      remaining: Math.max(0, this.MAX_REQUESTS - clientLimit.count),
       limit: this.MAX_REQUESTS,
       resetTime: clientLimit.resetTime
     };
