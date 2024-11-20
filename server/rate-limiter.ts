@@ -1,65 +1,56 @@
-import { Request } from 'express';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { Request, Response, NextFunction } from 'express';
 
-interface RateLimitInfo {
-  count: number;
-  resetTime: Date;
+// Create a rate limiter instance
+const rateLimiter = new RateLimiterMemory({
+  points: 3, // Number of requests
+  duration: 24 * 60 * 60, // Per 24 hours (in seconds)
+});
+
+export async function rateLimiterMiddleware(req: Request, res: Response, next: NextFunction) {
+  // Skip rate limiting for cached responses
+  if (req.headers['x-cache-hit'] === 'true') {
+    return next();
+  }
+
+  const clientId = req.headers['x-forwarded-for']?.toString() || req.ip;
+
+  try {
+    const rateLimiterRes = await rateLimiter.consume(clientId);
+    
+    // Set rate limit headers
+    res.set('X-RateLimit-Limit', '3');
+    res.set('X-RateLimit-Remaining', rateLimiterRes.remainingPoints.toString());
+    res.set('X-RateLimit-Reset', new Date(Date.now() + rateLimiterRes.msBeforeNext).toISOString());
+    
+    next();
+  } catch (error) {
+    if (error instanceof Error) {
+      return res.status(429).json({
+        error: 'Rate limit exceeded',
+        details: 'You can only generate 3 receipts every 24 hours',
+        resetTime: new Date(Date.now() + (error as any).msBeforeNext).toISOString()
+      });
+    }
+    next(error);
+  }
 }
 
-export class RateLimiter {
-  private limits: Map<string, RateLimitInfo> = new Map();
-  private readonly MAX_REQUESTS = 3;
-  private readonly WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-  private getClientId(req: Request): string {
-    return req.headers['x-forwarded-for']?.toString() || req.ip;
-  }
-
-  public isRateLimited(req: Request): boolean {
-    const clientId = this.getClientId(req);
-    const now = new Date();
-    let clientLimit = this.limits.get(clientId);
-
-    // If no existing rate limit info or window has expired
-    if (!clientLimit || now > clientLimit.resetTime) {
-      clientLimit = {
-        count: 1,
-        resetTime: new Date(now.getTime() + this.WINDOW_MS)
-      };
-      this.limits.set(clientId, clientLimit);
-      return false;
-    }
-
-    // Check if already over limit
-    if (clientLimit.count >= this.MAX_REQUESTS) {
-      return true;
-    }
-
-    // Increment counter
-    clientLimit.count += 1;
-    return false;
-  }
-
-  public getRateLimitInfo(req: Request): {
-    remaining: number;
-    limit: number;
-    resetTime: Date | null;
-  } {
-    const clientId = this.getClientId(req);
-    const now = new Date();
-    const clientLimit = this.limits.get(clientId);
-
-    if (!clientLimit || now > clientLimit.resetTime) {
-      return {
-        remaining: this.MAX_REQUESTS,
-        limit: this.MAX_REQUESTS,
-        resetTime: null
-      };
-    }
-
+export async function getRateLimitInfo(req: Request) {
+  const clientId = req.headers['x-forwarded-for']?.toString() || req.ip;
+  
+  try {
+    const res = await rateLimiter.get(clientId);
     return {
-      remaining: Math.max(0, this.MAX_REQUESTS - clientLimit.count),
-      limit: this.MAX_REQUESTS,
-      resetTime: clientLimit.resetTime
+      remaining: res ? res.remainingPoints : 3,
+      limit: 3,
+      resetTime: res ? new Date(Date.now() + res.msBeforeNext).toISOString() : null
+    };
+  } catch {
+    return {
+      remaining: 3,
+      limit: 3,
+      resetTime: null
     };
   }
 }

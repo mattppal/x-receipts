@@ -3,14 +3,11 @@ import { Router } from "express";
 import { db } from "../db";
 import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
-import { RateLimiter } from "./rate-limiter";
+import { rateLimiterMiddleware, getRateLimitInfo } from "./rate-limiter";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 const BYPASS_CACHE = process.env.NODE_ENV === "development" && process.env.FORCE_BYPASS_CACHE === "true";
 
-const rateLimiter = new RateLimiter();
-
-// Add logging utility function
 function logApiResponse(label: string, data: any) {
   if (process.env.NODE_ENV === "development") {
     console.log(`[${label}]`, JSON.stringify(data, null, 2));
@@ -19,12 +16,13 @@ function logApiResponse(label: string, data: any) {
 
 export function registerRoutes(app: Router) {
   // Rate limit status endpoint
-  app.get("/api/rate-limit", (req, res) => {
-    const info = rateLimiter.getRateLimitInfo(req);
+  app.get("/api/rate-limit", async (req, res) => {
+    const info = await getRateLimitInfo(req);
     res.json(info);
   });
 
-  app.get("/api/x/users/:username", async (req, res) => {
+  // Apply rate limiting middleware to the user endpoint
+  app.get("/api/x/users/:username", rateLimiterMiddleware, async (req, res) => {
     if (!process.env.X_BEARER_TOKEN) {
       return res.status(500).json({
         error: "X API token not configured",
@@ -32,8 +30,9 @@ export function registerRoutes(app: Router) {
       });
     }
 
-    // Check cache first to avoid counting cached responses against rate limit
     const username = req.params.username.toLowerCase();
+    
+    // Check cache
     if (!BYPASS_CACHE && !req.query.nocache) {
       try {
         const cachedData = await db
@@ -54,16 +53,6 @@ export function registerRoutes(app: Router) {
       } catch (error) {
         console.error("Cache error:", error);
       }
-    }
-
-    // Apply rate limiting for non-cached requests
-    if (rateLimiter.isRateLimited(req)) {
-      const info = rateLimiter.getRateLimitInfo(req);
-      return res.status(429).json({
-        error: "Rate limit exceeded",
-        details: "You can only generate 3 receipts every 24 hours",
-        resetTime: info.resetTime
-      });
     }
 
     // Fetch user data from Twitter API
@@ -182,9 +171,6 @@ export function registerRoutes(app: Router) {
         }
       }
 
-      const rateInfo = rateLimiter.getRateLimitInfo(req);
-      res.set("X-RateLimit-Remaining", rateInfo.remaining.toString());
-      res.set("X-RateLimit-Reset", rateInfo.resetTime?.toISOString() || '');
       res.set("X-Cache-Hit", "false");
       res.json(formattedData);
     } catch (error: any) {
