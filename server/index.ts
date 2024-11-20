@@ -8,10 +8,25 @@ import { createServer } from "http";
 const app = express();
 
 // Configure CORS
+const allowedOrigins = [
+  process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "",
+  "https://x-receipts.replit.app"
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === "production" 
-    ? "https://x-receipt.replit.app" 
-    : "http://localhost:5173",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
