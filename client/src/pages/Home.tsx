@@ -5,7 +5,20 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
 import { useToPng } from "@hugocxl/react-to-image";
-import Database from "@replit/database";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+  url: "https://global-ready-kitten-31878.upstash.io",
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
+});
+
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(3, "24 h"),
+  analytics: true,
+  prefix: "@upstash/x-receipts",
+});
 
 export default function Home() {
   const [username, setUsername] = useState<string>("");
@@ -15,54 +28,20 @@ export default function Home() {
   const [remainingCalls, setRemainingCalls] = useState(3);
 
   const demoUsers = ["elonmusk", "amasad", "sama", "mattppal"];
-  const db = new Database();
-  const RATE_LIMIT_KEY = "rate_limit";
-  const CALLS_PER_DAY = 3;
-  const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
   const checkRateLimit = useCallback(async () => {
     try {
-      const rateLimitData = await db.get(RATE_LIMIT_KEY);
-      const now = Date.now();
-
-      if (!rateLimitData) {
-        await db.set(RATE_LIMIT_KEY, {
-          calls: 1,
-          resetTime: now + MS_PER_DAY
-        });
-        setRemainingCalls(CALLS_PER_DAY - 1);
-        setIsRateLimited(false);
-        return true;
-      }
-
-      if (now > rateLimitData.resetTime) {
-        await db.set(RATE_LIMIT_KEY, {
-          calls: 1,
-          resetTime: now + MS_PER_DAY
-        });
-        setRemainingCalls(CALLS_PER_DAY - 1);
-        setIsRateLimited(false);
-        return true;
-      }
-
-      if (rateLimitData.calls >= CALLS_PER_DAY) {
-        setRemainingCalls(0);
-        setIsRateLimited(true);
-        return false;
-      }
-
-      await db.set(RATE_LIMIT_KEY, {
-        calls: rateLimitData.calls + 1,
-        resetTime: rateLimitData.resetTime
-      });
-      setRemainingCalls(CALLS_PER_DAY - (rateLimitData.calls + 1));
-      setIsRateLimited(false);
-      return true;
+      const identifier = "global"; // You can make this user-specific if needed
+      const { success, limit, remaining } = await ratelimit.limit(identifier);
+      
+      setRemainingCalls(remaining);
+      setIsRateLimited(!success);
+      return success;
     } catch (error) {
       console.error('Rate limit error:', error);
       return true; // Fail open if rate limiting fails
     }
-  }, [db]);
+  }, []);
 
   const handleSearch = async (newUsername: string) => {
     const canProceed = await checkRateLimit();
@@ -78,28 +57,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const loadRateLimit = async () => {
-      try {
-        const rateLimitData = await db.get(RATE_LIMIT_KEY);
-        if (rateLimitData) {
-          const now = Date.now();
-          if (now > rateLimitData.resetTime) {
-            setRemainingCalls(CALLS_PER_DAY);
-            setIsRateLimited(false);
-          } else {
-            setRemainingCalls(CALLS_PER_DAY - rateLimitData.calls);
-            setIsRateLimited(rateLimitData.calls >= CALLS_PER_DAY);
-          }
-        } else {
-          setRemainingCalls(CALLS_PER_DAY);
-          setIsRateLimited(false);
-        }
-      } catch (error) {
-        console.error('Failed to load rate limit:', error);
-      }
-    };
-    loadRateLimit();
-  }, [db]);
+    checkRateLimit();
+  }, [checkRateLimit]);
 
   const [{ isLoading }, convert, ref] = useToPng<HTMLDivElement>({
     onSuccess: async (data) => {
