@@ -5,51 +5,101 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
 import { useToPng } from "@hugocxl/react-to-image";
-import { Progress } from "../components/ui/progress";
-import { Alert, AlertDescription } from "../components/ui/alert";
+import Database from "@replit/database";
 
 export default function Home() {
   const [username, setUsername] = useState<string>("");
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
-  const [rateLimitInfo, setRateLimitInfo] = useState({
-    remaining: 3,
-    limit: 3,
-    resetTime: null as string | null
-  });
   const [isRateLimited, setIsRateLimited] = useState(false);
-
-  const updateRateLimitInfo = useCallback(async () => {
-    try {
-      const response = await fetch('/api/rate-limit');
-      const data = await response.json();
-      setRateLimitInfo({
-        remaining: data.remaining,
-        limit: data.limit,
-        resetTime: data.resetTime
-      });
-      setIsRateLimited(data.remaining <= 0);
-    } catch (error) {
-      console.error('Failed to check rate limit:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Listen for rate limit updates
-    const handleRateLimitUpdate = (event: CustomEvent<typeof rateLimitInfo>) => {
-      setRateLimitInfo(event.detail);
-      setIsRateLimited(event.detail.remaining <= 0);
-    };
-
-    window.addEventListener('ratelimitupdate', handleRateLimitUpdate as EventListener);
-    updateRateLimitInfo();
-
-    return () => {
-      window.removeEventListener('ratelimitupdate', handleRateLimitUpdate as EventListener);
-    };
-  }, [updateRateLimitInfo]);
+  const [remainingCalls, setRemainingCalls] = useState(3);
 
   const demoUsers = ["elonmusk", "amasad", "sama", "mattppal"];
+  const db = new Database();
+  const RATE_LIMIT_KEY = "rate_limit";
+  const CALLS_PER_DAY = 3;
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+  const checkRateLimit = useCallback(async () => {
+    try {
+      const rateLimitData = await db.get(RATE_LIMIT_KEY);
+      const now = Date.now();
+
+      if (!rateLimitData) {
+        await db.set(RATE_LIMIT_KEY, {
+          calls: 1,
+          resetTime: now + MS_PER_DAY
+        });
+        setRemainingCalls(CALLS_PER_DAY - 1);
+        setIsRateLimited(false);
+        return true;
+      }
+
+      if (now > rateLimitData.resetTime) {
+        await db.set(RATE_LIMIT_KEY, {
+          calls: 1,
+          resetTime: now + MS_PER_DAY
+        });
+        setRemainingCalls(CALLS_PER_DAY - 1);
+        setIsRateLimited(false);
+        return true;
+      }
+
+      if (rateLimitData.calls >= CALLS_PER_DAY) {
+        setRemainingCalls(0);
+        setIsRateLimited(true);
+        return false;
+      }
+
+      await db.set(RATE_LIMIT_KEY, {
+        calls: rateLimitData.calls + 1,
+        resetTime: rateLimitData.resetTime
+      });
+      setRemainingCalls(CALLS_PER_DAY - (rateLimitData.calls + 1));
+      setIsRateLimited(false);
+      return true;
+    } catch (error) {
+      console.error('Rate limit error:', error);
+      return true; // Fail open if rate limiting fails
+    }
+  }, [db]);
+
+  const handleSearch = async (newUsername: string) => {
+    const canProceed = await checkRateLimit();
+    if (!canProceed) {
+      toast({
+        title: "Rate limit exceeded",
+        description: "You can only generate 3 receipts every 24 hours",
+        variant: "destructive",
+      });
+      return;
+    }
+    setUsername(newUsername);
+  };
+
+  useEffect(() => {
+    const loadRateLimit = async () => {
+      try {
+        const rateLimitData = await db.get(RATE_LIMIT_KEY);
+        if (rateLimitData) {
+          const now = Date.now();
+          if (now > rateLimitData.resetTime) {
+            setRemainingCalls(CALLS_PER_DAY);
+            setIsRateLimited(false);
+          } else {
+            setRemainingCalls(CALLS_PER_DAY - rateLimitData.calls);
+            setIsRateLimited(rateLimitData.calls >= CALLS_PER_DAY);
+          }
+        } else {
+          setRemainingCalls(CALLS_PER_DAY);
+          setIsRateLimited(false);
+        }
+      } catch (error) {
+        console.error('Failed to load rate limit:', error);
+      }
+    };
+    loadRateLimit();
+  }, [db]);
 
   const [{ isLoading }, convert, ref] = useToPng<HTMLDivElement>({
     onSuccess: async (data) => {
@@ -102,8 +152,6 @@ export default function Home() {
     }
   }, [username, convert, toast]);
 
-  const remainingPercentage = (rateLimitInfo.remaining / rateLimitInfo.limit) * 100;
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto space-y-8">
@@ -128,6 +176,16 @@ export default function Home() {
           <p className="text-gray-600">
             Get a receipt of your X profile. Purely for tax purposes.
           </p>
+          {!isRateLimited && (
+            <p className="text-sm text-gray-500 mt-2">
+              Remaining receipts today: {remainingCalls}
+            </p>
+          )}
+          {isRateLimited && (
+            <p className="text-sm text-red-500 mt-2">
+              Rate limit exceeded. Please try again in 24 hours.
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap justify-center gap-2">
@@ -139,33 +197,17 @@ export default function Home() {
               key={user}
               variant="outline"
               size="sm"
-              onClick={() => setUsername(user)}
+              onClick={() => handleSearch(user)}
               className="rounded-full"
+              disabled={isRateLimited}
             >
               @{user}
             </Button>
           ))}
         </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-gray-500">
-            <span>Receipts remaining</span>
-            <span>{rateLimitInfo.remaining} / {rateLimitInfo.limit}</span>
-          </div>
-          <Progress value={remainingPercentage} />
-        </div>
-
-        {isRateLimited && (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Rate limit reached. Please try again later
-              {rateLimitInfo.resetTime && ` after ${new Date(rateLimitInfo.resetTime).toLocaleTimeString()}`}.
-            </AlertDescription>
-          </Alert>
-        )}
-
         <Card className="p-6">
-          <SearchForm onSearch={setUsername} disabled={isRateLimited} />
+          <SearchForm onSearch={handleSearch} disabled={isRateLimited} />
         </Card>
 
         {username && (
