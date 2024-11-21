@@ -1,8 +1,6 @@
 import useSWR from "swr";
 import { format, differenceInYears } from "date-fns";
 import { fetchXUser } from "../lib/x";
-import { useToast } from "../hooks/use-toast";
-import { useEffect, useState } from "react";
 
 import {
   ReceiptLayout,
@@ -24,19 +22,7 @@ export function XReceipt({ username }: XReceiptProps) {
     username ? `/x/users/${username}?user.fields=verified_type` : null,
     () => fetchXUser(username),
   );
-
-  const { toast } = useToast();
-  const [remainingRequests, setRemainingRequests] = useState<number>(3);
-
-  useEffect(() => {
-    const updateRemainingRequests = () => {
-      const limit = parseInt(document.querySelector('meta[name="x-ratelimit-remaining"]')?.getAttribute('content') || '3');
-      setRemainingRequests(limit);
-    };
-
-    updateRemainingRequests();
-  }, [user]);
-
+  
   if (userError) {
     return (
       <Alert variant="destructive">
@@ -237,9 +223,6 @@ export function XReceipt({ username }: XReceiptProps) {
           </div>
         </div>
 
-        <div className="mt-4 text-center text-sm text-gray-500">
-          Receipts generated: {3 - remainingRequests} / 3 per day
-        </div>
       </ReceiptLayout>
     </div>
   );
