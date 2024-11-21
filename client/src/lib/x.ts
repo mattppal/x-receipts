@@ -94,55 +94,22 @@ export const xUserSchema = z.object({
 
 export type XUser = z.infer<typeof xUserSchema>;
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export async function fetchXUser(username: string): Promise<XUser> {
+  const response = await fetch(`/api/x/users/${username}`, {
+    headers: {
+      Accept: "application/json",
+      "Cache-Control": "no-cache",
+    },
+  });
+  
+  const data = await response.json();
 
-export async function fetchXUser(
-  username: string,
-  retryCount = 3,
-): Promise<XUser> {
-  try {
-    const response = await fetch(`/api/x/users/${username}`, {
-      headers: {
-        Accept: "application/json",
-        "Cache-Control": "no-cache",
-      },
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        const retryAfter = response.headers.get("retry-after") || "60";
-        const resetTime = data.resetTime ? new Date(data.resetTime) : undefined;
-
-        throw {
-          status: 429,
-          message: "Rate limit exceeded",
-          details: `Please try again ${resetTime ? `after ${resetTime.toLocaleTimeString()}` : "later"}`,
-          retryAfter: parseInt(retryAfter, 10),
-        };
-      }
-
-      if (response.status === 401) {
-        throw {
-          status: 401,
-          message: "Authentication error",
-          details: "Please check your API token configuration",
-        };
-      }
-
-      throw {
-        message: data.error || "Failed to fetch X user",
-        details: data.details || "Unknown error occurred",
-      };
-    }
-
-    return xUserSchema.parse(data);
-  } catch (error: any) {
-    if (error.status === 429 && retryCount > 0) {
-      const retryAfter = error.retryAfter || 60;
-      await delay(retryAfter * 1000);
-      return fetchXUser(username, retryCount - 1);
-    }
-    throw error;
+  if (!response.ok) {
+    throw {
+      message: data.error || "Failed to fetch X user",
+      details: data.details || "Unknown error occurred",
+    };
   }
+
+  return xUserSchema.parse(data);
 }

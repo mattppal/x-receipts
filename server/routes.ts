@@ -3,7 +3,6 @@ import { Router } from "express";
 import { db } from "../db";
 import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
-import { rateLimiterMiddleware, getRateLimitInfo } from "./rate-limiter";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 const BYPASS_CACHE = process.env.NODE_ENV === "development" && process.env.FORCE_BYPASS_CACHE === "true";
@@ -15,14 +14,7 @@ function logApiResponse(label: string, data: any) {
 }
 
 export function registerRoutes(app: Router) {
-  // Rate limit status endpoint
-  app.get("/api/rate-limit", async (req, res) => {
-    const info = await getRateLimitInfo(req);
-    res.json(info);
-  });
-
-  // Apply rate limiting middleware to the user endpoint
-  app.get("/api/x/users/:username", rateLimiterMiddleware, async (req, res) => {
+  app.get("/api/x/users/:username", async (req, res) => {
     if (!process.env.X_BEARER_TOKEN) {
       return res.status(500).json({
         error: "X API token not configured",
@@ -176,29 +168,6 @@ export function registerRoutes(app: Router) {
     } catch (error: any) {
       console.error("X API error:", error);
       logApiResponse("Error Response", error);
-
-      if (
-        error.code === 429 ||
-        (error.errors && error.errors[0]?.code === 88)
-      ) {
-        const resetTime = error.rateLimit?.reset
-          ? new Date(error.rateLimit.reset * 1000).toISOString()
-          : undefined;
-
-        if (error.rateLimit?.reset) {
-          const retryAfter = Math.max(
-            1,
-            Math.ceil((error.rateLimit.reset * 1000 - Date.now()) / 1000),
-          );
-          res.set("Retry-After", retryAfter.toString());
-        }
-
-        return res.status(429).json({
-          error: "X API rate limit exceeded",
-          details: `Please try again later${resetTime ? ` after ${resetTime}` : ""}`,
-          resetTime,
-        });
-      }
 
       if (error.code === 401) {
         return res.status(401).json({
