@@ -5,60 +5,33 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
 import { useToPng } from "@hugocxl/react-to-image";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-
-const redis = new Redis({
-  url: "https://global-ready-kitten-31878.upstash.io",
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
-});
-
-const ratelimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(3, "24 h"),
-  analytics: true,
-  prefix: "@upstash/x-receipts",
-});
 
 export default function Home() {
   const [username, setUsername] = useState<string>("");
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
-  const [remainingCalls, setRemainingCalls] = useState(3);
 
   const demoUsers = ["elonmusk", "amasad", "sama", "mattppal"];
 
-  const checkRateLimit = useCallback(async () => {
-    try {
-      const identifier = "global"; // You can make this user-specific if needed
-      const { success, limit, remaining } = await ratelimit.limit(identifier);
-      
-      setRemainingCalls(remaining);
-      setIsRateLimited(!success);
-      return success;
-    } catch (error) {
-      console.error('Rate limit error:', error);
-      return true; // Fail open if rate limiting fails
+  useEffect(() => {
+    // Reset rate limit status after 1 minute
+    if (isRateLimited) {
+      const timer = setTimeout(() => setIsRateLimited(false), 60000);
+      return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isRateLimited]);
 
-  const handleSearch = async (newUsername: string) => {
-    const canProceed = await checkRateLimit();
-    if (!canProceed) {
+  const handleApiError = (error: any) => {
+    if (error?.status === 429) {
+      setIsRateLimited(true);
       toast({
-        title: "Rate limit exceeded",
-        description: "You can only generate 3 receipts every 24 hours",
+        title: "Rate Limit Exceeded",
+        description: "Please wait a moment before trying again.",
         variant: "destructive",
       });
-      return;
     }
-    setUsername(newUsername);
   };
-
-  useEffect(() => {
-    checkRateLimit();
-  }, [checkRateLimit]);
 
   const [{ isLoading }, convert, ref] = useToPng<HTMLDivElement>({
     onSuccess: async (data) => {
@@ -84,6 +57,7 @@ export default function Home() {
       }
     },
     onError: (error) => {
+      handleApiError(error); // Use error handler
       console.error("Failed to generate image:", error);
       toast({
         title: "Error",
@@ -135,16 +109,6 @@ export default function Home() {
           <p className="text-gray-600">
             Get a receipt of your X profile. Purely for tax purposes.
           </p>
-          {!isRateLimited && (
-            <p className="text-sm text-gray-500 mt-2">
-              Remaining receipts today: {remainingCalls}
-            </p>
-          )}
-          {isRateLimited && (
-            <p className="text-sm text-red-500 mt-2">
-              Rate limit exceeded. Please try again in 24 hours.
-            </p>
-          )}
         </div>
 
         <div className="flex flex-wrap justify-center gap-2">
@@ -156,9 +120,8 @@ export default function Home() {
               key={user}
               variant="outline"
               size="sm"
-              onClick={() => handleSearch(user)}
+              onClick={() => setUsername(user)}
               className="rounded-full"
-              disabled={isRateLimited}
             >
               @{user}
             </Button>
@@ -166,7 +129,12 @@ export default function Home() {
         </div>
 
         <Card className="p-6">
-          <SearchForm onSearch={handleSearch} disabled={isRateLimited} />
+          <SearchForm onSearch={setUsername} disabled={isRateLimited} />
+          {isRateLimited && (
+            <div className="mt-2 text-sm text-red-500">
+              Rate limit exceeded. Please wait a moment before trying again.
+            </div>
+          )}
         </Card>
 
         {username && (

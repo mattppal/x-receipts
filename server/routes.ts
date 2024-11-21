@@ -3,6 +3,7 @@ import { Router } from "express";
 import { db } from "../db";
 import { xUserCache } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { rateLimit } from "./ratelimiter";
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 const BYPASS_CACHE = process.env.NODE_ENV === "development" && process.env.FORCE_BYPASS_CACHE === "true";
@@ -14,6 +15,9 @@ function logApiResponse(label: string, data: any) {
 }
 
 export function registerRoutes(app: Router) {
+  // Apply rate limiter to all API routes
+  app.use('/api', rateLimit);
+
   app.get("/api/x/users/:username", async (req, res) => {
     if (!process.env.X_BEARER_TOKEN) {
       return res.status(500).json({
